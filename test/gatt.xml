@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration>
+
+    <service uuid="1800">
+      <description>Generic Access Profile</description>
+
+      <characteristic uuid="2a00">
+        <properties read="true" const="true" />
+        <value>Bluegiga BLED112</value>
+      </characteristic>
+
+      <characteristic uuid="2a01">
+        <properties read="true" const="true" />
+        <value type="hex">8000</value>
+      </characteristic>
+    </service>
+    <service uuid="1801" type="primary">
+        <description>Test service for bgapi_py</description>
+        <characteristic uuid="4000">
+            <properties read="true" write="true" />
+            <value variable_length="true" length="20"/>
+        </characteristic>
+        <characteristic uuid="4001">
+            <properties read="true" />
+            <value>Read Only Characteristic</value>
+        </characteristic>
+        <characteristic uuid="4002">
+            <properties write="true" />
+            <value type="hex" length="8"/>
+        </characteristic>
+        <include id="1" />
+    </service>
+    <service id="1" uuid="1802" type="secondary">
+        <description>Set of authenticated attributes</description>
+        <characteristic uuid="4003">
+            <properties read="true" authenticated_read="true" />
+            <value variable_length="true" length="20" />
+        </characteristic>
+        <characteristic uuid="4004">
+            <properties write="true" authenticated_write="true" />
+            <value variable_length="true" length="20" />
+        </characteristic>
+        <include id="2" />
+    </service>
+    <service id="2" uuid="1803" type="secondary">
+        <description>Attributes with other properties</description>
+        <characteristic uuid="4005">
+            <properties read="true" reliable_write="true" />
+            <value variable_length="false" length="4" />
+        </characteristic>
+        <characteristic uuid="4006">
+            <properties read="true" write="true" indicate="true" />
+            <value>Something</value>
+        </characteristic>
+        <characteristic uuid="4007">
+            <properties read="true" write="true" notify="true" />
+            <value>Somehow</value>
+        </characteristic>
+        <characteristic uuid="4008">
+            <properties read="true" write_no_response="true" />
+            <value>No Response</value>
+        </characteristic>
+    </service>
+</configuration>
