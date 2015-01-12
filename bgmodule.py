@@ -75,8 +75,30 @@ class GATTCharacteristic(object):
             self.descriptors[uuid] = GATTCharacteristicDescriptor(handle, value)
 
 
-class BLEConnection(object):
-    def __init__(self, handle, address, address_type, interval, timeout, latency, bonding):
+class ProcedureManager(object):
+    def __init__(self):
+        self.procedure_in_progress = False
+
+    def start_procedure(self, type):
+        self.procedure_in_progress = type
+
+    def wait_for_procedure(self, timeout=3):
+        start = time.time()
+        while (self.procedure_in_progress and time.time() < start + timeout):
+            pass
+        if time.time() > start + timeout:
+            return False
+        return True
+
+    def procedure_complete(self, type):
+        if (self.procedure_in_progress == type):
+            self.procedure_in_progress = False
+
+
+class BLEConnection(ProcedureManager):
+    def __init__(self, api, handle, address, address_type, interval, timeout, latency, bonding):
+        super(BLEConnection, self).__init__()
+        self._api = api
         self.handle = handle
         self.address = address
         self.address_type = address_type
@@ -116,9 +138,46 @@ class BLEConnection(object):
         else:
             raise BlueGigaModuleException("Attribute Value for Handle %d received with unknown UUID!" % (handle))
 
+    def read_by_group_type(self, type, timeout=3):
+        self.start_procedure(PROCEDURE)
+        self._api.ble_cmd_attclient_read_by_group_type(self.handle, 1, 65535, type)
+        if not self.wait_for_procedure(timeout=timeout):
+            raise BlueGigaModuleException("Read By Group procedure did not complete before timeout!")
 
-class BlueGigaModule(BlueGigaCallbacks):
+    def read_by_type(self, service, type, timeout=3):
+        self.start_procedure(PROCEDURE)
+        self._api.ble_cmd_attclient_read_by_type(self.handle, service.start_handle, service.end_handle, type)
+        if not self.wait_for_procedure(timeout=timeout):
+            raise BlueGigaModuleException("Read By Type procedure did not complete before timeout!")
+
+    def find_information(self, service, timeout=5):
+        self.start_procedure(PROCEDURE)
+        self._api.ble_cmd_attclient_find_information(self.handle, service.start_handle, service.end_handle)
+        if not self.wait_for_procedure(timeout=timeout):
+            raise BlueGigaModuleException("Find Information did not complete before timeout!")
+
+    def read_by_handle(self, handle, timeout=3):
+        self.start_procedure(READ_ATTRIBUTE)
+        self._api.ble_cmd_attclient_read_by_handle(self.handle, handle)
+        if not self.wait_for_procedure(timeout=timeout):
+            raise BlueGigaModuleException("Read Attribute by Handle did not complete before timeout!")
+
+    def write_by_handle(self, handle, value, timeout=3):
+        pass
+
+    def characteristic_subscribe(self, characteristic, indicate=True, notify=True):
+        pass
+
+    def request_encryption(self, bond=True, timeout=1):
+        self.start_procedure(START_ENCRYPTION)
+        self._api.ble_cmd_sm_encrypt_start(self.handle, 1 if bond else 0)
+        if not self.wait_for_procedure(timeout=timeout):
+            raise BlueGigaModuleException("Start Encryption did not complete before timeout!")
+
+
+class BlueGigaModule(BlueGigaCallbacks, ProcedureManager):
     def __init__(self, port, baud=115200, timeout=1):
+        super(BlueGigaModule, self).__init__()
         self._api = BlueGigaAPI(port, callbacks=self, baud=baud, timeout=timeout)
         self.address = None
         self._module_info = None
@@ -129,21 +188,6 @@ class BlueGigaModule(BlueGigaCallbacks):
 
     def shutdown(self):
         self._api.stop_daemon()
-
-    def start_procedure(self, type):
-        self.procedure_in_progress = type
-
-    def wait_for_procedure(self, timeout=3):
-        start = time.time()
-        while (self.procedure_in_progress and time.time() < start + timeout):
-            pass
-        if time.time() > start + timeout:
-            return False
-        return True
-
-    def procedure_complete(self, type):
-        if (self.procedure_in_progress == type):
-            self.procedure_in_progress = False
 
     def get_module_info(self, timeout=0.5):
         start = time.time()
@@ -168,6 +212,11 @@ class BlueGigaModule(BlueGigaCallbacks):
         for i in range(8):
             self.disconnect(i)
         self._api.ble_cmd_gap_end_procedure()
+
+    def disconnect(self, connection):
+        self.start_procedure(DISCONNECT)
+        self._api.ble_cmd_connection_disconnect(connection=connection)
+        self.wait_for_procedure()
 
     def scan_limited(self, timeout=20):
         return self._scan(mode=gap_discover_mode['gap_discover_limited'], timeout=timeout)
@@ -248,41 +297,6 @@ class BlueGigaModule(BlueGigaCallbacks):
             raise BlueGigaModuleException("Connection attempt unsuccessful! (%s)" % target.get_sender_address())
         return self.most_recent_connection
 
-    def read_by_group_type(self, connection, type, timeout=3):
-        self.start_procedure(PROCEDURE)
-        self._api.ble_cmd_attclient_read_by_group_type(connection, 1, 65535, type)
-        if not self.wait_for_procedure(timeout=timeout):
-            raise BlueGigaModuleException("Read By Group procedure did not complete before timeout!")
-
-    def get_services(self, connection):
-        return self.connections[connection].get_services()
-
-    def read_by_type(self, connection, service, type, timeout=3):
-        self.start_procedure(PROCEDURE)
-        self._api.ble_cmd_attclient_read_by_type(connection, service.start_handle, service.end_handle, type)
-        if not self.wait_for_procedure(timeout=timeout):
-            raise BlueGigaModuleException("Read By Type procedure did not complete before timeout!")
-        return self.connections[connection].characteristics
-
-    def find_information(self, connection, service, timeout=5):
-        self.start_procedure(PROCEDURE)
-        self._api.ble_cmd_attclient_find_information(connection, service.start_handle, service.end_handle)
-        if not self.wait_for_procedure(timeout=timeout):
-            raise BlueGigaModuleException("Find Information did not complete before timeout!")
-
-    def read_by_handle(self, connection, handle, timeout=3):
-        self.start_procedure(READ_ATTRIBUTE)
-        self._api.ble_cmd_attclient_read_by_handle(connection, handle)
-        if not self.wait_for_procedure(timeout=timeout):
-            raise BlueGigaModuleException("Read Attribute by Handle did not complete before timeout!")
-        return self.connections[connection].characteristics
-
-    def write_by_handle(self, connection, handle, value, timeout=3):
-        pass
-
-    def characteristic_subscribe(self, characteristic, indicate=True, notify=True):
-        pass
-
     def start_advertisement(self, adv_mode, conn_mode, interval_min=1000, interval_max=1500, channels=0x07):
         self._api.ble_cmd_gap_set_adv_parameters(interval_min, interval_max, channels)
         self._api.ble_cmd_gap_set_mode(discover=adv_mode, connect=conn_mode)
@@ -292,12 +306,6 @@ class BlueGigaModule(BlueGigaCallbacks):
 
     def disallow_bonding(self):
         self._api.ble_cmd_sm_set_bondable_mode(0)
-
-    def request_encryption(self, connection, bond=True, timeout=1):
-        self.start_procedure(START_ENCRYPTION)
-        self._api.ble_cmd_sm_encrypt_start(connection, 1 if bond else 0)
-        if not self.wait_for_procedure(timeout=timeout):
-            raise BlueGigaModuleException("Start Encryption did not complete before timeout!")
 
     def delete_bonding(self):
         self._api.ble_cmd_sm_delete_bonding(0)
@@ -317,11 +325,6 @@ class BlueGigaModule(BlueGigaCallbacks):
         self._api.ble_cmd_gap_end_procedure()
         return self.scan_responses
 
-    def disconnect(self, connection):
-        self.start_procedure(DISCONNECT)
-        self._api.ble_cmd_connection_disconnect(connection=connection)
-        self.wait_for_procedure()
-
 #------------- Response and Event Callbacks  -------------#
 
     def ble_rsp_system_address_get(self, address):
@@ -338,7 +341,8 @@ class BlueGigaModule(BlueGigaCallbacks):
     def ble_evt_connection_status(self, connection, flags, address, address_type, conn_interval, timeout, latency, bonding):
         super(BlueGigaModule, self).ble_evt_connection_status(connection, flags, address, address_type, conn_interval, timeout, latency, bonding)
         if flags & connection_status_mask['connection_completed']:
-            conn = BLEConnection(handle=connection,
+            conn = BLEConnection(api=self._api,
+                                 handle=connection,
                                  address=address,
                                  address_type=address_type,
                                  interval=conn_interval,
@@ -346,11 +350,11 @@ class BlueGigaModule(BlueGigaCallbacks):
                                  latency=latency,
                                  bonding=bonding)
             self.connections[connection] = conn
-            self.most_recent_connection = connection
+            self.most_recent_connection = conn
             self.procedure_complete(CONNECT)
         if flags & connection_status_mask['connection_encrypted']:
             self.connections[connection].flags = flags
-            self.procedure_complete(START_ENCRYPTION)
+            self.connections[connection].procedure_complete(START_ENCRYPTION)
 
     def ble_evt_attclient_group_found(self, connection, start, end, uuid):
         super(BlueGigaModule, self).ble_evt_attclient_group_found(connection, start, end, uuid)
@@ -359,7 +363,8 @@ class BlueGigaModule(BlueGigaCallbacks):
     def ble_evt_attclient_procedure_completed(self, connection, result, chrhandle):
         super(BlueGigaModule, self).ble_evt_attclient_procedure_completed(connection, result, chrhandle)
         self.procedure_complete(PROCEDURE)
-        self.procedure_complete(READ_ATTRIBUTE) # When the attribute read fails
+        self.connections[connection].procedure_complete(PROCEDURE)
+        self.connections[connection].procedure_complete(READ_ATTRIBUTE) # When the attribute read fails
 
     def ble_rsp_system_get_info(self, major, minor, patch, build, ll_version, protocol_version, hw):
         super(BlueGigaModule, self).ble_rsp_system_get_info(major, minor, patch, build, ll_version, protocol_version, hw)
@@ -370,9 +375,8 @@ class BlueGigaModule(BlueGigaCallbacks):
 
     def ble_evt_attclient_attribute_value(self, connection, atthandle, type, value):
         super(BlueGigaModule, self).ble_evt_attclient_attribute_value(connection, atthandle, type, value)
-
         self.connections[connection].update_handle(atthandle, value)
-        self.procedure_complete(READ_ATTRIBUTE)
+        self.connections[connection].procedure_complete(READ_ATTRIBUTE)
 
     def ble_rsp_connection_disconnect(self, connection, result):
         super(BlueGigaModule, self).ble_rsp_connection_disconnect(connection, result)

@@ -1,9 +1,8 @@
 bgapi_py
 ==================
-A library for using Bluetooth Low Energy modules created by BlueGiga, based upon preliminary work https://github.com/jrowberg/bglib.
-However, the goal of that implementation is to look as similar as possible to the C library provided by BlueGiga.  The primary
-goal of this library is to leverage polymorphism and the capabilities of modern IDEs like PyCharm.
-Examples are provided for both client and server functionality.  Note that if you want to develop your own device profile,
+A library for using Bluetooth Low Energy modules created by BlueGiga.  This module is pure python usable from Windows, Ubuntu, and any
+platform with a serial port and the ability to run Python (like Raspberry Pi and Beaglebone Black).
+Examples are provided for both client and server functionality.  Note that if you want to develop your own device GATT profile,
 it requires a module firmware update.
 
 bgapi.py has two important components:
@@ -17,7 +16,7 @@ bgapi.py has two important components:
 cmd_def.py eliminates the need for magic numbers in method parameters, use it for more readable code.
 
 bgmodule.py wraps the API in an additional layer of abstraction.  It attempts to
- eliminate the need to understand the BlueGiga API whatsoever.
+ eliminate the need to understand the BlueGiga API, so that only an understanding of BLE is required.
  
 Example Code
 ====================
@@ -27,8 +26,4 @@ commands cannot be tested, especially hardware operations like GPIO and I2C.  Tw
 
 In Progress
 ====================
-1. Test code for authentication, encryption, and bonding.
-
-2. Test code for attribute transactions.
-
-3. Adjust ble_cmd functions for ease of use (data types and endianess).
+1. Indicate, notify, and other examples using characteristic descriptors.
