@@ -903,7 +903,7 @@ class BlueGigaCallbacks(object):
         logger.info("EVT-Attributes User Read Request")
 
     def ble_evt_attributes_status(self, handle, flags):
-        logger.info("EVT-Attributes Status")
+        logger.info("EVT-Attributes Status - Handle:%d - Flags:%04X" % (handle, flags))
 
     def ble_evt_connection_status(self, connection, flags, address, address_type, conn_interval, timeout, latency, bonding):
         logger.info("EVT-Connection Status - Handle:%d - Flags:%02X - " % (connection, flags) +

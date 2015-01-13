@@ -97,6 +97,10 @@ def example_client_operations():
 
     for characteristic in connection.get_characteristics():
         connection.read_by_handle(characteristic.value_handle)
+        if characteristic.has_notify() or characteristic.has_indicate():
+            connection.characteristic_subscription(characteristic,
+                                                   characteristic.has_indicate(),
+                                                   characteristic.has_notify())
 
     ble_client.disconnect(connection.handle)
     time.sleep(1)  # So that we can see the server disconnect event

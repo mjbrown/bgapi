@@ -74,6 +74,11 @@ class GATTCharacteristic(object):
         else:
             self.descriptors[uuid] = GATTCharacteristicDescriptor(handle, value)
 
+    def get_descriptor_by_uuid(self, uuid):
+        if not uuid in self.descriptors:
+            return None
+        else:
+            return self.descriptors[uuid]
 
 class ProcedureManager(object):
     def __init__(self):
@@ -163,10 +168,17 @@ class BLEConnection(ProcedureManager):
             raise BlueGigaModuleException("Read Attribute by Handle did not complete before timeout!")
 
     def write_by_handle(self, handle, value, timeout=3):
-        pass
+        self.start_procedure(PROCEDURE)
+        self._api.ble_cmd_attclient_write_command(self.handle, handle, value)
+        if not self.wait_for_procedure(timeout=timeout) and timeout > 0:
+            raise BlueGigaModuleException("Write Command did not complete before timeout! Connection:%d - Handle:%d" % self.handle, handle)
 
-    def characteristic_subscribe(self, characteristic, indicate=True, notify=True):
-        pass
+    def characteristic_subscription(self, characteristic, indicate=True, notify=True):
+        descriptor = characteristic.get_descriptor_by_uuid(GATTCharacteristic.CLIENT_CHARACTERISTIC_CONFIG)
+        if not descriptor:
+            raise BlueGigaModuleException("Unable to find Client Characteristic Config (must Read by Type 0x2902)")
+        config = chr((2 if indicate else 0) + (1 if notify else 0)) + "\x00"
+        self.write_by_handle(descriptor.handle, config, timeout=0)  # There is no response to a subscription request
 
     def request_encryption(self, bond=True, timeout=1):
         self.start_procedure(START_ENCRYPTION)
@@ -390,3 +402,6 @@ class BlueGigaModule(BlueGigaCallbacks, ProcedureManager):
     def ble_evt_attclient_find_information_found(self, connection, chrhandle, uuid):
         super(BlueGigaModule, self).ble_evt_attclient_find_information_found(connection, chrhandle, uuid)
         self.connections[connection].update_uuid(chrhandle, uuid)
+
+    def ble_evt_attributes_status(self, handle, flags):
+        super(BlueGigaModule, self).ble_evt_attributes_status(handle, flags)
