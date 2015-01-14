@@ -57,6 +57,21 @@ RESULT_CODE = {0x0000: "OK",
                0x0480: "Application Error Codes",
                }
 
+ATTRIBUTE_CHANGE_REASON = {0x0: "Write Request",
+                           0x1: "Write Command",
+                           0x2: "Write Request User"}
+
+ATTRIBUTE_STATUS_FLAGS = {0x0: "No Notifications or Indications",
+                          0x1: "Notification",
+                          0x2: "Indication",
+                          0x3: "Notification and Indication"}
+
+ATTRIBUTE_VALUE_TYPE = {0x0: "Read",
+                        0x1: "Notification",
+                        0x2: "Indication",
+                        0x3: "Read By Type",
+                        0x4: "Read Blob",
+                        0x5: "Indication Response Requested"}
 
 system_endpoints= {
 	'system_endpoint_api': 0,
@@ -68,34 +83,11 @@ system_endpoints= {
 	'system_endpoints_max': 6
 }
 
-attributes_attribute_change_reason= {
-	'attributes_attribute_change_reason_write_request': 0,
-	'attributes_attribute_change_reason_write_command': 1,
-	'attributes_attribute_change_reason_write_request_user': 2,
-	'attributes_attribute_change_reason_max': 3
-}
-
-attributes_attribute_status_flag= {
-	'attributes_attribute_status_flag_notify': 1,
-	'attributes_attribute_status_flag_indicate': 2,
-	'attributes_attribute_status_flag_max': 3
-}
-
 connection_status_mask= {
 	'connection_connected': 1,
 	'connection_encrypted': 2,
 	'connection_completed': 4,
 	'connection_parameters_change': 8,
-}
-
-attclient_attribute_value_types= {
-	'attclient_attribute_value_type_read': 0,
-	'attclient_attribute_value_type_notify': 1,
-	'attclient_attribute_value_type_indicate': 2,
-	'attclient_attribute_value_type_read_by_type': 3,
-	'attclient_attribute_value_type_read_blob': 4,
-	'attclient_attribute_value_type_indicate_rsp_req': 5,
-	'attclient_attribute_value_types_max': 6
 }
 
 sm_bonding_key= {

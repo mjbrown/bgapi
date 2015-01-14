@@ -3,7 +3,7 @@ import sys
 import logging
 import logging.handlers
 
-from bgmodule import BlueGigaModule, GATTCharacteristic, GATTService
+from bgmodule import BlueGigaModule, GATTCharacteristic, GATTService, BlueGigaClient, BlueGigaServer
 from cmd_def import gap_discoverable_mode, gap_connectable_mode
 
 CLIENT_SERIAL = "COM9"
@@ -17,8 +17,8 @@ api_logger.addHandler(term)
 api_logger.setLevel(level=logging.INFO)
 
 def example_physical_web():
-    ble_client = BlueGigaModule(port=CLIENT_SERIAL, timeout=0.1)
-    ble_server = BlueGigaModule(port=SERVER_SERIAL, timeout=0.1)
+    ble_client = BlueGigaClient(port=CLIENT_SERIAL, timeout=0.1)
+    ble_server = BlueGigaServer(port=SERVER_SERIAL, timeout=0.1)
 
     ble_client.reset_ble_state()
     ble_server.reset_ble_state()
@@ -29,8 +29,8 @@ def example_physical_web():
     responses = ble_client.scan_all(timeout=3)
 
 def example_ibeacon():
-    ble_client = BlueGigaModule(port=CLIENT_SERIAL, timeout=0.1)
-    ble_server = BlueGigaModule(port=SERVER_SERIAL, timeout=0.1)
+    ble_client = BlueGigaClient(port=CLIENT_SERIAL, timeout=0.1)
+    ble_server = BlueGigaServer(port=SERVER_SERIAL, timeout=0.1)
 
     ble_server.reset_ble_state()
     ble_client.reset_ble_state()
@@ -42,8 +42,8 @@ def example_ibeacon():
     responses = ble_client.scan_all(timeout=3)
 
 def example_simultaneous_beacons():
-    ble_client = BlueGigaModule(port=CLIENT_SERIAL, timeout=0.1)
-    ble_server = BlueGigaModule(port=SERVER_SERIAL, timeout=0.1)
+    ble_client = BlueGigaClient(port=CLIENT_SERIAL, timeout=0.1)
+    ble_server = BlueGigaServer(port=SERVER_SERIAL, timeout=0.1)
 
     ble_server.reset_ble_state()
     ble_client.reset_ble_state()
@@ -60,8 +60,8 @@ def example_simultaneous_beacons():
                                  major=0, minor=0)
 
 def example_client_operations():
-    ble_client = BlueGigaModule(port=CLIENT_SERIAL, timeout=0.1)
-    ble_server = BlueGigaModule(port=SERVER_SERIAL, timeout=0.1)
+    ble_client = BlueGigaClient(port=CLIENT_SERIAL, timeout=0.1)
+    ble_server = BlueGigaServer(port=SERVER_SERIAL, timeout=0.1)
 
     # BLE Device configuration and start advertising
     ble_server.reset_ble_state()
@@ -76,7 +76,7 @@ def example_client_operations():
     ble_client.reset_ble_state()
     ble_client.delete_bonding()
     ble_client.allow_bonding()
-    responses = ble_client.scan_all(timeout=3)
+    responses = ble_client.scan_all(timeout=2)
     for resp in responses:
         if resp.get_sender_address() == ble_server.get_ble_address():
             target = resp
@@ -95,15 +95,26 @@ def example_client_operations():
         connection.read_by_type(service=service, type=GATTCharacteristic.CHARACTERISTIC_UUID)
         connection.read_by_type(service=service, type=GATTCharacteristic.CLIENT_CHARACTERISTIC_CONFIG)
 
+    notify_indicate = []
     for characteristic in connection.get_characteristics():
         connection.read_by_handle(characteristic.value_handle)
         if characteristic.has_notify() or characteristic.has_indicate():
             connection.characteristic_subscription(characteristic,
                                                    characteristic.has_indicate(),
-                                                   characteristic.has_notify())
+                                                   characteristic.has_notify() and not characteristic.has_indicate())
+            notify_indicate += [characteristic]
+        if characteristic.is_writable():
+            time.sleep(0.05)
+            connection.write_by_handle(characteristic.handle+1, "YoYo")
+
+    time.sleep(0.1) # Wait for subscriptions to be acknowledged
+    for characteristic in notify_indicate:
+        time.sleep(0.05) # Without this delay the client cannot handle the throughput
+        ble_server.write_attribute(characteristic.handle+1, "%d" % time.time())
+    time.sleep(0.5) # Wait for notifications to be delivered
 
     ble_client.disconnect(connection.handle)
-    time.sleep(1)  # So that we can see the server disconnect event
+    time.sleep(0.5)  # So that we can see the server disconnect event
 
 if __name__ == "__main__":
     example_client_operations()

@@ -3,7 +3,7 @@ import struct
 import serial
 import logging
 
-from cmd_def import RESULT_CODE
+from cmd_def import RESULT_CODE, ATTRIBUTE_CHANGE_REASON, ATTRIBUTE_STATUS_FLAGS, ATTRIBUTE_VALUE_TYPE
 
 logger = logging.getLogger("bgapi")
 
@@ -897,13 +897,14 @@ class BlueGigaCallbacks(object):
         logger.info("EVT-Flash PS Key")
 
     def ble_evt_attributes_value(self, connection, reason, handle, offset, value):
-        logger.info("EVT-Attributes Value")
+        logger.info("EVT-Attributes Value - Connection:%d - Reason:[%s] - Handle:%d - Offset:%d - " % (connection, ATTRIBUTE_CHANGE_REASON[reason], handle, offset) + \
+            "Value:%s" % ("".join(["%02X" % ord(i) for i in value])))
 
     def ble_evt_attributes_user_read_request(self, connection, handle, offset, maxsize):
         logger.info("EVT-Attributes User Read Request")
 
     def ble_evt_attributes_status(self, handle, flags):
-        logger.info("EVT-Attributes Status - Handle:%d - Flags:%04X" % (handle, flags))
+        logger.info("EVT-Attributes Status - Handle:%d - Flags:[%s]" % (handle, ATTRIBUTE_STATUS_FLAGS[flags]))
 
     def ble_evt_connection_status(self, connection, flags, address, address_type, conn_interval, timeout, latency, bonding):
         logger.info("EVT-Connection Status - Handle:%d - Flags:%02X - " % (connection, flags) +
@@ -923,10 +924,10 @@ class BlueGigaCallbacks(object):
         logger.info("EVT-Connection Disconnected - Connection:%d - Reason:%s" % (connection, RESULT_CODE[reason]))
 
     def ble_evt_attclient_indicated(self, connection, attrhandle):
-        logger.info("EVT-Attribute Client Indicated")
+        logger.info("EVT-Attribute Client Indicated - Connection:%d - Attribute Handle:%d" % (connection, attrhandle))
 
     def ble_evt_attclient_procedure_completed(self, connection, result, chrhandle):
-        logger.info("EVT-Attribute Client Procedure Completed - Connection:%d - Result:%s - End Characteristic Handle:%d" %
+        logger.info("EVT-Attribute Client Procedure Completed - Connection:%d - Result:[%s] - End Characteristic Handle:%d" %
                     (connection, RESULT_CODE[result], chrhandle))
 
     def ble_evt_attclient_group_found(self, connection, start, end, uuid):

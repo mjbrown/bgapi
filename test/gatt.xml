@@ -49,16 +49,20 @@
             <value variable_length="false" length="4" />
         </characteristic>
         <characteristic uuid="4006">
-            <properties read="true" write="true" indicate="true" />
-            <value>Something</value>
+            <properties const="false" read="true" write="true" indicate="true" />
+            <value variable_length="true" length="16">Something</value>
         </characteristic>
         <characteristic uuid="4007">
-            <properties read="true" write="true" notify="true" />
-            <value>Somehow</value>
+            <properties const="false" read="true" write="true" notify="true" />
+            <value variable_length="true" length="18">Somehow</value>
         </characteristic>
         <characteristic uuid="4008">
             <properties read="true" write_no_response="true" />
             <value>No Response</value>
+        </characteristic>
+        <characteristic uuid="4009">
+            <properties read="true" write="true" indicate="true" notify="true" />
+            <value variable_length="true" length="20"></value>
         </characteristic>
     </service>
 </configuration>

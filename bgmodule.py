@@ -169,8 +169,9 @@ class BLEConnection(ProcedureManager):
 
     def write_by_handle(self, handle, value, timeout=3):
         self.start_procedure(PROCEDURE)
-        self._api.ble_cmd_attclient_write_command(self.handle, handle, value)
-        if not self.wait_for_procedure(timeout=timeout) and timeout > 0:
+        self._api.ble_cmd_attclient_attribute_write(self.handle, handle, value)
+        #self._api.ble_cmd_attclient_write_command(self.handle, handle, value)
+        if not self.wait_for_procedure(timeout=timeout):
             raise BlueGigaModuleException("Write Command did not complete before timeout! Connection:%d - Handle:%d" % self.handle, handle)
 
     def characteristic_subscription(self, characteristic, indicate=True, notify=True):
@@ -178,7 +179,7 @@ class BLEConnection(ProcedureManager):
         if not descriptor:
             raise BlueGigaModuleException("Unable to find Client Characteristic Config (must Read by Type 0x2902)")
         config = chr((2 if indicate else 0) + (1 if notify else 0)) + "\x00"
-        self.write_by_handle(descriptor.handle, config, timeout=0)  # There is no response to a subscription request
+        self.write_by_handle(descriptor.handle, config, timeout=1)
 
     def request_encryption(self, bond=True, timeout=1):
         self.start_procedure(START_ENCRYPTION)
@@ -230,6 +231,64 @@ class BlueGigaModule(BlueGigaCallbacks, ProcedureManager):
         self._api.ble_cmd_connection_disconnect(connection=connection)
         self.wait_for_procedure()
 
+    def allow_bonding(self):
+        self._api.ble_cmd_sm_set_bondable_mode(1)
+
+    def disallow_bonding(self):
+        self._api.ble_cmd_sm_set_bondable_mode(0)
+
+    def delete_bonding(self):
+        self._api.ble_cmd_sm_delete_bonding(0)
+
+    def set_device_capabilities(self, mitm=True, keysize=16, io=sm_io_capability['sm_io_capability_noinputnooutput']):
+        self._api.ble_cmd_sm_set_parameters(mitm=1 if mitm else 0, min_key_size=keysize, io_capabilities=io)
+
+    def set_out_of_band_data(self, oob):
+        self._api.ble_cmd_sm_set_oob_data(oob.decode("hex"))
+
+#------------- Response and Event Callbacks  -------------#
+
+    def ble_rsp_system_address_get(self, address):
+        super(BlueGigaModule, self).ble_rsp_system_address_get(address)
+        self.address = address
+        self.procedure_complete(GET_ADDRESS)
+
+    def ble_evt_connection_status(self, connection, flags, address, address_type, conn_interval, timeout, latency, bonding):
+        super(BlueGigaModule, self).ble_evt_connection_status(connection, flags, address, address_type, conn_interval, timeout, latency, bonding)
+        if flags & connection_status_mask['connection_completed']:
+            conn = BLEConnection(api=self._api,
+                                 handle=connection,
+                                 address=address,
+                                 address_type=address_type,
+                                 interval=conn_interval,
+                                 timeout=timeout,
+                                 latency=latency,
+                                 bonding=bonding)
+            self.connections[connection] = conn
+            self.most_recent_connection = conn
+            self.procedure_complete(CONNECT)
+        if flags & connection_status_mask['connection_encrypted']:
+            self.connections[connection].flags = flags
+            self.connections[connection].procedure_complete(START_ENCRYPTION)
+
+    def ble_rsp_system_get_info(self, major, minor, patch, build, ll_version, protocol_version, hw):
+        super(BlueGigaModule, self).ble_rsp_system_get_info(major, minor, patch, build, ll_version, protocol_version, hw)
+        self._module_info = {"FW Version": "%d.%d.%d.%d" % (major, minor, patch, build),
+                             "Link Layer Version": "%d" % ll_version,
+                             "Protocol Version": "%d" % protocol_version,
+                             "Hardware Version": "%d" % hw}
+
+    def ble_rsp_connection_disconnect(self, connection, result):
+        super(BlueGigaModule, self).ble_rsp_connection_disconnect(connection, result)
+        if result == 0x0186: # Not Connected
+            self.procedure_complete(DISCONNECT)
+
+    def ble_evt_connection_disconnected(self, connection, reason):
+        super(BlueGigaModule, self).ble_evt_connection_disconnected(connection, reason)
+        self.procedure_complete(DISCONNECT)
+
+
+class BlueGigaClient(BlueGigaModule):
     def scan_limited(self, timeout=20):
         return self._scan(mode=gap_discover_mode['gap_discover_limited'], timeout=timeout)
 
@@ -238,6 +297,60 @@ class BlueGigaModule(BlueGigaCallbacks, ProcedureManager):
 
     def scan_all(self, timeout=20):
         return self._scan(mode=gap_discover_mode['gap_discover_observation'], timeout=timeout)
+
+    def connect(self, target, timeout=5, conn_interval_min=0x20, conn_interval_max=0x30, connection_timeout=100, latency=0):
+        self.start_procedure(CONNECT)
+        self._api.ble_cmd_gap_connect_direct(address=target.sender,
+                                             addr_type=target.address_type,
+                                             conn_interval_min=conn_interval_min,
+                                             conn_interval_max=conn_interval_max,
+                                             timeout=connection_timeout,
+                                             latency=latency)
+        if not self.wait_for_procedure(timeout=timeout):
+            raise BlueGigaModuleException("Connection attempt unsuccessful! (%s)" % target.get_sender_address())
+        return self.most_recent_connection
+
+    def _scan(self, mode, timeout):
+        self.scan_responses = None
+        start = time.time()
+        self._api.ble_cmd_gap_discover(mode=mode)
+        while time.time() < start + timeout:
+            pass
+        self._api.ble_cmd_gap_end_procedure()
+        return self.scan_responses
+
+    #----------------  Events triggered by incoming data ------------------#
+
+    def ble_evt_gap_scan_response(self, rssi, packet_type, sender, address_type, bond, data):
+        super(BlueGigaModule, self).ble_evt_gap_scan_response(rssi, packet_type, sender, address_type, bond, data)
+        if not self.scan_responses:
+            self.scan_responses = []
+        self.scan_responses += [ BLEScanResponse(rssi, packet_type, sender, address_type, bond, data) ]
+
+    def ble_evt_attclient_find_information_found(self, connection, chrhandle, uuid):
+        super(BlueGigaModule, self).ble_evt_attclient_find_information_found(connection, chrhandle, uuid)
+        self.connections[connection].update_uuid(chrhandle, uuid)
+
+    def ble_evt_attclient_attribute_value(self, connection, atthandle, type, value):
+        super(BlueGigaModule, self).ble_evt_attclient_attribute_value(connection, atthandle, type, value)
+        self.connections[connection].update_handle(atthandle, value)
+        self.connections[connection].procedure_complete(READ_ATTRIBUTE)
+
+    def ble_evt_attclient_group_found(self, connection, start, end, uuid):
+        super(BlueGigaModule, self).ble_evt_attclient_group_found(connection, start, end, uuid)
+        self.connections[connection].update_service(start, end, uuid)
+
+    def ble_evt_attclient_procedure_completed(self, connection, result, chrhandle):
+        super(BlueGigaModule, self).ble_evt_attclient_procedure_completed(connection, result, chrhandle)
+        self.procedure_complete(PROCEDURE)
+        self.connections[connection].procedure_complete(PROCEDURE)
+        self.connections[connection].procedure_complete(READ_ATTRIBUTE) # When the attribute read fails
+
+
+class BlueGigaServer(BlueGigaModule):
+    def start_advertisement(self, adv_mode, conn_mode, interval_min=1000, interval_max=1500, channels=0x07):
+        self._api.ble_cmd_gap_set_adv_parameters(interval_min, interval_max, channels)
+        self._api.ble_cmd_gap_set_mode(discover=adv_mode, connect=conn_mode)
 
     def advertise_general(self, interval_min=500, interval_max=1000, channels=0x7):
         self.start_advertisement(adv_mode=gap_discoverable_mode['gap_general_discoverable'],
@@ -297,111 +410,18 @@ class BlueGigaModule(BlueGigaCallbacks, ProcedureManager):
         self._api.ble_cmd_gap_set_mode(discover=gap_discoverable_mode['gap_non_discoverable'],
                                        connect=gap_connectable_mode['gap_undirected_connectable'])
 
-    def connect(self, target, timeout=5, conn_interval_min=0x20, conn_interval_max=0x30, connection_timeout=100, latency=0):
-        self.start_procedure(CONNECT)
-        self._api.ble_cmd_gap_connect_direct(address=target.sender,
-                                             addr_type=target.address_type,
-                                             conn_interval_min=conn_interval_min,
-                                             conn_interval_max=conn_interval_max,
-                                             timeout=connection_timeout,
-                                             latency=latency)
-        if not self.wait_for_procedure(timeout=timeout):
-            raise BlueGigaModuleException("Connection attempt unsuccessful! (%s)" % target.get_sender_address())
-        return self.most_recent_connection
+    def write_attribute(self, handle, value, offset=0, timeout=1):
+        self.start_procedure(PROCEDURE)
+        self._api.ble_cmd_attributes_write(handle=handle, offset=offset, value=value)
+        self.wait_for_procedure(timeout=timeout)
 
-    def start_advertisement(self, adv_mode, conn_mode, interval_min=1000, interval_max=1500, channels=0x07):
-        self._api.ble_cmd_gap_set_adv_parameters(interval_min, interval_max, channels)
-        self._api.ble_cmd_gap_set_mode(discover=adv_mode, connect=conn_mode)
-
-    def allow_bonding(self):
-        self._api.ble_cmd_sm_set_bondable_mode(1)
-
-    def disallow_bonding(self):
-        self._api.ble_cmd_sm_set_bondable_mode(0)
-
-    def delete_bonding(self):
-        self._api.ble_cmd_sm_delete_bonding(0)
-
-    def set_device_capabilities(self, mitm=True, keysize=16, io=sm_io_capability['sm_io_capability_noinputnooutput']):
-        self._api.ble_cmd_sm_set_parameters(mitm=1 if mitm else 0, min_key_size=keysize, io_capabilities=io)
-
-    def set_out_of_band_data(self, oob):
-        self._api.ble_cmd_sm_set_oob_data(oob.decode("hex"))
-
-    def _scan(self, mode, timeout):
-        self.scan_responses = None
-        start = time.time()
-        self._api.ble_cmd_gap_discover(mode=mode)
-        while time.time() < start + timeout:
-            pass
-        self._api.ble_cmd_gap_end_procedure()
-        return self.scan_responses
-
-#------------- Response and Event Callbacks  -------------#
-
-    def ble_rsp_system_address_get(self, address):
-        super(BlueGigaModule, self).ble_rsp_system_address_get(address)
-        self.address = address
-        self.procedure_complete(GET_ADDRESS)
-
-    def ble_evt_gap_scan_response(self, rssi, packet_type, sender, address_type, bond, data):
-        super(BlueGigaModule, self).ble_evt_gap_scan_response(rssi, packet_type, sender, address_type, bond, data)
-        if not self.scan_responses:
-            self.scan_responses = []
-        self.scan_responses += [ BLEScanResponse(rssi, packet_type, sender, address_type, bond, data) ]
-
-    def ble_evt_connection_status(self, connection, flags, address, address_type, conn_interval, timeout, latency, bonding):
-        super(BlueGigaModule, self).ble_evt_connection_status(connection, flags, address, address_type, conn_interval, timeout, latency, bonding)
-        if flags & connection_status_mask['connection_completed']:
-            conn = BLEConnection(api=self._api,
-                                 handle=connection,
-                                 address=address,
-                                 address_type=address_type,
-                                 interval=conn_interval,
-                                 timeout=timeout,
-                                 latency=latency,
-                                 bonding=bonding)
-            self.connections[connection] = conn
-            self.most_recent_connection = conn
-            self.procedure_complete(CONNECT)
-        if flags & connection_status_mask['connection_encrypted']:
-            self.connections[connection].flags = flags
-            self.connections[connection].procedure_complete(START_ENCRYPTION)
-
-    def ble_evt_attclient_group_found(self, connection, start, end, uuid):
-        super(BlueGigaModule, self).ble_evt_attclient_group_found(connection, start, end, uuid)
-        self.connections[connection].update_service(start, end, uuid)
-
-    def ble_evt_attclient_procedure_completed(self, connection, result, chrhandle):
-        super(BlueGigaModule, self).ble_evt_attclient_procedure_completed(connection, result, chrhandle)
-        self.procedure_complete(PROCEDURE)
-        self.connections[connection].procedure_complete(PROCEDURE)
-        self.connections[connection].procedure_complete(READ_ATTRIBUTE) # When the attribute read fails
-
-    def ble_rsp_system_get_info(self, major, minor, patch, build, ll_version, protocol_version, hw):
-        super(BlueGigaModule, self).ble_rsp_system_get_info(major, minor, patch, build, ll_version, protocol_version, hw)
-        self._module_info = {"FW Version": "%d.%d.%d.%d" % (major, minor, patch, build),
-                             "Link Layer Version": "%d" % ll_version,
-                             "Protocol Version": "%d" % protocol_version,
-                             "Hardware Version": "%d" % hw}
-
-    def ble_evt_attclient_attribute_value(self, connection, atthandle, type, value):
-        super(BlueGigaModule, self).ble_evt_attclient_attribute_value(connection, atthandle, type, value)
-        self.connections[connection].update_handle(atthandle, value)
-        self.connections[connection].procedure_complete(READ_ATTRIBUTE)
-
-    def ble_rsp_connection_disconnect(self, connection, result):
-        super(BlueGigaModule, self).ble_rsp_connection_disconnect(connection, result)
-        if result == 0x0186: # Not Connected
-            self.procedure_complete(DISCONNECT)
-
-    def ble_evt_connection_disconnected(self, connection, reason):
-        super(BlueGigaModule, self).ble_evt_connection_disconnected(connection, reason)
-        self.procedure_complete(DISCONNECT)
-
-    def ble_evt_attclient_find_information_found(self, connection, chrhandle, uuid):
-        super(BlueGigaModule, self).ble_evt_attclient_find_information_found(connection, chrhandle, uuid)
-        self.connections[connection].update_uuid(chrhandle, uuid)
-
+    #-------------------- Events triggered by incoming data ------------- #
     def ble_evt_attributes_status(self, handle, flags):
         super(BlueGigaModule, self).ble_evt_attributes_status(handle, flags)
+
+    def ble_rsp_attributes_write(self, result):
+        super(BlueGigaServer, self).ble_rsp_attributes_write(result)
+        self.procedure_complete(PROCEDURE)
+
+    def ble_evt_attributes_value(self, connection, reason, handle, offset, value):
+        super(BlueGigaServer, self).ble_evt_attributes_value(connection, reason, handle, offset, value)
