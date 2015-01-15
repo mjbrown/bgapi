@@ -44,11 +44,13 @@ class GATTService(object):
 class GATTCharacteristic(object):
     CHARACTERISTIC_UUID = "\x03\x28"
     CLIENT_CHARACTERISTIC_CONFIG = "\x02\x29"
+    USER_DESCRIPTION = "\x01\x29"
     def __init__(self, handle, properties):
         self.handle = handle
         self.properties, self.value_handle = struct.unpack("<BH", properties[:3])
         self.uuid = properties[3:]
         self.descriptors = {}
+        self.value = None
 
     def is_readable(self):
         return (self.properties & 0x02) > 0
@@ -228,7 +230,10 @@ class BlueGigaModule(BlueGigaCallbacks, ProcedureManager):
 
     def disconnect(self, connection):
         self.start_procedure(DISCONNECT)
-        self._api.ble_cmd_connection_disconnect(connection=connection)
+        try:
+            self._api.ble_cmd_connection_disconnect(connection=connection.handle)
+        except AttributeError:
+            self._api.ble_cmd_connection_disconnect(connection=connection)
         self.wait_for_procedure()
 
     def allow_bonding(self):
