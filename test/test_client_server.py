@@ -3,11 +3,11 @@ import sys
 import logging
 import logging.handlers
 
-from bgmodule import BlueGigaModule, GATTCharacteristic, GATTService, BlueGigaClient, BlueGigaServer
-from cmd_def import gap_discoverable_mode, gap_connectable_mode
+from bgapi.bgmodule import BlueGigaModule, GATTCharacteristic, GATTService, BlueGigaClient, BlueGigaServer
+from bgapi.cmd_def import gap_discoverable_mode, gap_connectable_mode
 
 CLIENT_SERIAL = "COM9"
-SERVER_SERIAL = "COM11"
+SERVER_SERIAL = "COM12"
 
 term = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -58,6 +58,52 @@ def example_simultaneous_beacons():
         time.sleep(1)
         ble_server.setup_ibeacon(uuid="e2c56db5-dffb-48d2-b060-d0f5a71096e0",
                                  major=0, minor=0)
+
+def example_simple_scan():
+    """
+    Server advertises general discoverable.
+    Client scans in observation mode.
+    """
+    ble_client = BlueGigaClient(CLIENT_SERIAL, baud=115200, timeout=0.1)
+    ble_server = BlueGigaServer(SERVER_SERIAL, baud=115200, timeout=0.1)
+
+    ble_client.reset_ble_state()
+    ble_server.reset_ble_state()
+
+    ble_server.advertise_general()
+    responses = ble_client.scan_all(timeout=5)
+
+
+def example_connect_discover():
+    ble_client = BlueGigaClient(CLIENT_SERIAL, baud=115200, timeout=0.1)
+    ble_server = BlueGigaServer(SERVER_SERIAL, baud=115200, timeout=0.1)
+
+    ble_client.reset_ble_state()
+    ble_server.reset_ble_state()
+
+    ble_server.advertise_general()
+    responses = ble_client.scan_all(timeout=5)
+    for resp in responses:
+        if resp.get_sender_address() == ble_server.get_ble_address():
+            target = resp
+            break
+    else:
+        raise Exception("No Advertisements received from server %s" % (ble_server.get_ble_address()))
+
+    connection = ble_client.connect(target=target)
+    connection.read_by_group_type(type=GATTService.PRIMARY_SERVICE_UUID)
+    for service in connection.get_services():
+        connection.find_information(service=service)
+        connection.read_by_type(service=service, type=GATTCharacteristic.CHARACTERISTIC_UUID)
+        connection.read_by_type(service=service, type=GATTCharacteristic.USER_DESCRIPTION)
+
+    for characteristic in connection.get_characteristics():
+        connection.read_by_handle(characteristic.value_handle)
+        description = characteristic.get_descriptor_by_uuid(GATTCharacteristic.USER_DESCRIPTION)
+        if description:
+            print "%s - Handle:%d - Current Value:%s" % (description.value, characteristic.handle, characteristic.value)
+
+    ble_client.disconnect(connection)
 
 def example_client_operations():
     ble_client = BlueGigaClient(port=CLIENT_SERIAL, timeout=0.1)
@@ -117,7 +163,9 @@ def example_client_operations():
     time.sleep(0.5)  # So that we can see the server disconnect event
 
 if __name__ == "__main__":
-    example_client_operations()
+    #example_simple_scan()
     #example_ibeacon()
     #example_physical_web()
     #example_simultaneous_beacons()
+    #example_connect_discover()
+    example_client_operations()

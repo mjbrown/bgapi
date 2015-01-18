@@ -968,7 +968,7 @@ class BlueGigaCallbacks(object):
         logger.info("EVT-GAP Scan Response - RSSI:%d - Packet Type:%d - " % (rssi, packet_type) +
                     "Sender:%02x:%02x:%02x:%02x:%02x:%02x - " % tuple([ord(i) for i in sender[::-1]]) +
                     "Address Type:%d - Bond:%d - Data:" % (address_type, bond) +
-                    "".join((["%02x"% ord(i) for i in data[::-1]])))
+                    "".join((["%02x"% ord(i) for i in data])))
 
     def ble_evt_gap_mode_changed(self, discover, connect):
         logger.info("EVT-GAP Mode Changed")
