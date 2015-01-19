@@ -686,10 +686,10 @@ class BlueGigaCallbacks(object):
         logger.info("RSP-Attributes Write: [%s]" %  RESULT_CODE[result])
 
     def ble_rsp_attributes_read(self, handle, offset, result, value):
-        logger.info("RSP-Attributes Read: [%s]" %  RESULT_CODE[result])
+        logger.info("RSP-Attributes Read [%s] - Handle:%d - Offset:%d - Value:%s" %  (RESULT_CODE[result], handle, offset, "".join(["%02X" % ord(i) for i in value[::-1]])))
 
     def ble_rsp_attributes_read_type(self, handle, result, value):
-        logger.info("RSP-Attributes Read Type: [%s]" %  RESULT_CODE[result])
+        logger.info("RSP-Attributes Read Type [%s] - Handle:%d Value:%s" %  (RESULT_CODE[result], handle, "".join(["%02X" % ord(i) for i in value[::-1]])))
 
     def ble_rsp_attributes_user_read_response(self):
         logger.info("RSP-Attributes User Read Response")

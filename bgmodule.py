@@ -5,6 +5,8 @@ import operator
 from bgapi import BlueGigaAPI, BlueGigaCallbacks
 from cmd_def import gap_discoverable_mode, gap_connectable_mode, gap_discover_mode, \
     connection_status_mask, sm_io_capability, RESULT_CODE
+import logging
+import sys
 
 GET_ADDRESS = "Read Address in Progress"
 PROCEDURE = "Procedure in Progress"
@@ -201,6 +203,14 @@ class BlueGigaModule(BlueGigaCallbacks, ProcedureManager):
         self._api.start_daemon()
         self.procedure_in_progress = False
 
+    def pipe_logs_to_terminal(self):
+        term = logging.StreamHandler(sys.stdout)
+        formatter = logging.Formatter(self._api._serial.portstr + ': %(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        term.setFormatter(formatter)
+        api_logger = logging.getLogger("bgapi")
+        api_logger.addHandler(term)
+        api_logger.setLevel(level=logging.INFO)
+
     def shutdown(self):
         self._api.stop_daemon()
 
@@ -353,6 +363,11 @@ class BlueGigaClient(BlueGigaModule):
 
 
 class BlueGigaServer(BlueGigaModule):
+    def __init__(self, port, baud, timeout):
+        super(BlueGigaServer, self).__init__(port, baud, timeout)
+        self.handle_types = {}
+        self.handle_values = {}
+
     def start_advertisement(self, adv_mode, conn_mode, interval_min=1000, interval_max=1500, channels=0x07):
         self._api.ble_cmd_gap_set_adv_parameters(interval_min, interval_max, channels)
         self._api.ble_cmd_gap_set_mode(discover=adv_mode, connect=conn_mode)
@@ -420,6 +435,19 @@ class BlueGigaServer(BlueGigaModule):
         self._api.ble_cmd_attributes_write(handle=handle, offset=offset, value=value)
         self.wait_for_procedure(timeout=timeout)
 
+    def read_by_handle(self, handle, offset, timeout):
+        self.start_procedure(PROCEDURE)
+        self._api.ble_cmd_attributes_read(handle, offset)
+        if self.wait_for_procedure(timeout=timeout):
+            return self.handle_values[handle]
+
+    def read_type(self, handle, timeout=1):
+        self.start_procedure(PROCEDURE)
+        self._api.ble_cmd_attributes_read_type(handle)
+        if self.wait_for_procedure(timeout=timeout):
+            return self.handle_types[handle]
+
+
     #-------------------- Events triggered by incoming data ------------- #
     def ble_evt_attributes_status(self, handle, flags):
         super(BlueGigaModule, self).ble_evt_attributes_status(handle, flags)
@@ -430,3 +458,18 @@ class BlueGigaServer(BlueGigaModule):
 
     def ble_evt_attributes_value(self, connection, reason, handle, offset, value):
         super(BlueGigaServer, self).ble_evt_attributes_value(connection, reason, handle, offset, value)
+
+    def ble_rsp_attributes_read_type(self, handle, result, value):
+        super(BlueGigaServer, self).ble_rsp_attributes_read_type(handle, result, value)
+        self.handle_types[handle] = value
+        self.procedure_complete(PROCEDURE)
+
+    def ble_rsp_attributes_read(self, handle, offset, result, value):
+        super(BlueGigaServer, self).ble_rsp_attributes_read(handle, offset, result, value)
+        if handle in self.handle_values and offset > 0:
+            self.handle_values[handle] = self.handle_values[handle][:offset] + value
+        elif offset > 0:
+            self.handle_values[handle] = "\x00"*offset + value
+        else:
+            self.handle_values[handle] = value
+        self.procedure_complete(PROCEDURE)
