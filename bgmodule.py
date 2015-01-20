@@ -118,6 +118,7 @@ class BLEConnection(ProcedureManager):
         self.services = {}
         self.characteristics = {}
         self.handle_uuid = {}
+        self.uuid_handle = {}
         self.handle_value = {}
 
     def get_connected_address(self):
@@ -134,6 +135,18 @@ class BLEConnection(ProcedureManager):
 
     def update_uuid(self, handle, uuid):
         self.handle_uuid[handle] = uuid
+        if uuid in self.uuid_handle:
+            self.uuid_handle[uuid] += [handle]
+        else:
+            self.uuid_handle[uuid] = [handle]
+
+    def get_handles_by_uuid(self, uuid):
+        if uuid in self.uuid_handle:
+            return self.uuid_handle[uuid]
+
+    def get_uuid_by_handle(self, handle):
+        if handle in self.handle_uuid:
+            return self.handle_uuid[handle]
 
     def update_handle(self, handle, value):
         if handle in self.handle_uuid:
@@ -203,13 +216,13 @@ class BlueGigaModule(BlueGigaCallbacks, ProcedureManager):
         self._api.start_daemon()
         self.procedure_in_progress = False
 
-    def pipe_logs_to_terminal(self):
+    def pipe_logs_to_terminal(self, level=logging.INFO):
         term = logging.StreamHandler(sys.stdout)
         formatter = logging.Formatter(self._api._serial.portstr + ': %(asctime)s - %(name)s - %(levelname)s - %(message)s')
         term.setFormatter(formatter)
         api_logger = logging.getLogger("bgapi")
         api_logger.addHandler(term)
-        api_logger.setLevel(level=logging.INFO)
+        api_logger.setLevel(level=level)
 
     def shutdown(self):
         self._api.stop_daemon()
