@@ -206,7 +206,7 @@ class BLEConnection(ProcedureManager):
 
 
 class BlueGigaModule(BlueGigaCallbacks, ProcedureManager):
-    def __init__(self, port, baud=115200, timeout=1):
+    def __init__(self, port, baud=115200, timeout=0.1):
         super(BlueGigaModule, self).__init__()
         self._api = BlueGigaAPI(port, callbacks=self, baud=baud, timeout=timeout)
         self.address = None
@@ -376,7 +376,7 @@ class BlueGigaClient(BlueGigaModule):
 
 
 class BlueGigaServer(BlueGigaModule):
-    def __init__(self, port, baud, timeout):
+    def __init__(self, port, baud=115200, timeout=0.1):
         super(BlueGigaServer, self).__init__(port, baud, timeout)
         self.handle_types = {}
         self.handle_values = {}

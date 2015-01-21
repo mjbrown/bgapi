@@ -9,17 +9,7 @@ from bgapi.cmd_def import gap_discoverable_mode, gap_connectable_mode
 CLIENT_SERIAL = "COM9"
 SERVER_SERIAL = "COM12"
 
-term = logging.StreamHandler(sys.stdout)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-term.setFormatter(formatter)
-api_logger = logging.getLogger("bgapi")
-api_logger.addHandler(term)
-api_logger.setLevel(level=logging.INFO)
-
-def example_physical_web():
-    ble_client = BlueGigaClient(port=CLIENT_SERIAL, timeout=0.1)
-    ble_server = BlueGigaServer(port=SERVER_SERIAL, timeout=0.1)
-
+def test_physical_web(ble_client, ble_server):
     ble_client.reset_ble_state()
     ble_server.reset_ble_state()
 
@@ -28,10 +18,7 @@ def example_physical_web():
                                    conn_mode=gap_connectable_mode['gap_undirected_connectable'])
     responses = ble_client.scan_all(timeout=3)
 
-def example_ibeacon():
-    ble_client = BlueGigaClient(port=CLIENT_SERIAL, timeout=0.1)
-    ble_server = BlueGigaServer(port=SERVER_SERIAL, timeout=0.1)
-
+def test_ibeacon(ble_client, ble_server):
     ble_server.reset_ble_state()
     ble_client.reset_ble_state()
 
@@ -41,32 +28,11 @@ def example_ibeacon():
                                    conn_mode=gap_connectable_mode['gap_undirected_connectable'])
     responses = ble_client.scan_all(timeout=3)
 
-def example_simultaneous_beacons():
-    ble_client = BlueGigaClient(port=CLIENT_SERIAL, timeout=0.1)
-    ble_server = BlueGigaServer(port=SERVER_SERIAL, timeout=0.1)
-
-    ble_server.reset_ble_state()
-    ble_client.reset_ble_state()
-
-    ble_server.setup_ibeacon(uuid="e2c56db5-dffb-48d2-b060-d0f5a71096e0",
-                                 major=0, minor=0)
-    ble_server.start_advertisement(adv_mode=gap_discoverable_mode['gap_user_data'],
-                                   conn_mode=gap_connectable_mode['gap_undirected_connectable'])
-    for i in range(30):
-        time.sleep(1)
-        ble_server.setup_physical_web("http://www.bluegiga.com")
-        time.sleep(1)
-        ble_server.setup_ibeacon(uuid="e2c56db5-dffb-48d2-b060-d0f5a71096e0",
-                                 major=0, minor=0)
-
-def example_simple_scan():
+def test_simple_scan(ble_client, ble_server):
     """
     Server advertises general discoverable.
     Client scans in observation mode.
     """
-    ble_client = BlueGigaClient(CLIENT_SERIAL, baud=115200, timeout=0.1)
-    ble_server = BlueGigaServer(SERVER_SERIAL, baud=115200, timeout=0.1)
-
     ble_client.reset_ble_state()
     ble_server.reset_ble_state()
 
@@ -74,10 +40,7 @@ def example_simple_scan():
     responses = ble_client.scan_all(timeout=5)
 
 
-def example_connect_discover():
-    ble_client = BlueGigaClient(CLIENT_SERIAL, baud=115200, timeout=0.1)
-    ble_server = BlueGigaServer(SERVER_SERIAL, baud=115200, timeout=0.1)
-
+def test_connect_discover(ble_client, ble_server):
     ble_client.reset_ble_state()
     ble_server.reset_ble_state()
 
@@ -105,10 +68,7 @@ def example_connect_discover():
 
     ble_client.disconnect(connection)
 
-def example_client_operations():
-    ble_client = BlueGigaClient(port=CLIENT_SERIAL, timeout=0.1)
-    ble_server = BlueGigaServer(port=SERVER_SERIAL, timeout=0.1)
-
+def test_client_operations(ble_client, ble_server):
     # BLE Device configuration and start advertising
     ble_server.reset_ble_state()
     ble_server.get_module_info()
@@ -163,9 +123,11 @@ def example_client_operations():
     time.sleep(0.5)  # So that we can see the server disconnect event
 
 if __name__ == "__main__":
-    #example_simple_scan()
-    #example_ibeacon()
-    #example_physical_web()
-    #example_simultaneous_beacons()
-    #example_connect_discover()
-    example_client_operations()
+    ble_client = BlueGigaClient(port=CLIENT_SERIAL, baud=115200, timeout=0.1)
+    ble_server = BlueGigaServer(port=SERVER_SERIAL, baud=115200, timeout=0.1)
+    ble_server.pipe_logs_to_terminal()
+    test_simple_scan(ble_client, ble_server)
+    test_ibeacon(ble_client, ble_server)
+    test_physical_web(ble_client, ble_server)
+    test_connect_discover(ble_client, ble_server)
+    test_client_operations(ble_client, ble_server)
