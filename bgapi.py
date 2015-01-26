@@ -939,7 +939,7 @@ class BlueGigaCallbacks(object):
 
     def ble_evt_attclient_find_information_found(self, connection, chrhandle, uuid):
         logger.info("EVT-Attribute Client Find Information Found - Connection:%d - Handle:%d - " % (connection, chrhandle) +
-                    "UUID:" + "".join(["%02X" % ord(i) for i in uuid[::-1]]))
+                    "UUID:" + "".join(["\\x%02X" % ord(i) for i in uuid[::-1]]))
 
     def ble_evt_attclient_attribute_value(self, connection, atthandle, type, value):
         logger.info("EVT-Attribute Client Attribute Value - Connection:%d - Handle:%d - Type:%d - Value:%s" %

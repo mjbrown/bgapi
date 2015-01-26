@@ -391,7 +391,7 @@ class BlueGigaClient(BlueGigaModule):
 
     def ble_evt_attclient_group_found(self, connection, start, end, uuid):
         super(BlueGigaModule, self).ble_evt_attclient_group_found(connection, start, end, uuid)
-        self.connections[connection].update_service(start, end, uuid)
+        self.connections[connection].update_service(start, end, uuid[::-1])
 
     def ble_evt_attclient_procedure_completed(self, connection, result, chrhandle):
         super(BlueGigaModule, self).ble_evt_attclient_procedure_completed(connection, result, chrhandle)
