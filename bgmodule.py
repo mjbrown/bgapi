@@ -26,9 +26,34 @@ class BLEScanResponse(object):
         self.address_type = address_type
         self.bond = bond
         self.data = data
+        self.services = []
 
     def get_sender_address(self):
         return self.sender
+
+    def parse_advertisement_data(self):
+        remaining = self.data
+        while len(remaining) > 0:
+            length = ord(remaining[0])
+            gap_data = remaining[1:length+1]
+            #print "GAP Data: %s" % ("".join(["\\x%02x" % ord(i) for i in gap_data]))
+            remaining = remaining[length+1:]
+            if gap_data[0] == 0x1:  # Flags
+                pass
+            elif gap_data[0] == "\x02" or gap_data[0] == "\x03":  # Incomplete/Complete list of 16-bit UUIDs
+                for i in range((len(gap_data) - 1)/2):
+                    self.services += [gap_data[2*i+1:2*i+3][::-1]]
+            elif gap_data[0] == "\x04" or gap_data[0] == "\x05":  # Incomplete list of 32-bit UUIDs
+                for i in range((len(gap_data) - 1)/4):
+                    self.services += [gap_data[4*i+1:4*i+5][::-1]]
+            elif gap_data[0] == "\x06" or gap_data[0] == "\x07":  # Incomplete list of 128-bit UUIDs
+                for i in range((len(gap_data) - 1)/16):
+                    self.services += [gap_data[16*i+1:16*i+17][::-1]]
+
+    def get_services(self):
+        self.parse_advertisement_data()
+        return self.services
+
 
 class GATTCharacteristicDescriptor(object):
     def __init__(self, handle, value):
