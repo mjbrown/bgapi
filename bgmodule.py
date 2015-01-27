@@ -42,13 +42,13 @@ class BLEScanResponse(object):
                 pass
             elif gap_data[0] == "\x02" or gap_data[0] == "\x03":  # Incomplete/Complete list of 16-bit UUIDs
                 for i in range((len(gap_data) - 1)/2):
-                    self.services += [gap_data[2*i+1:2*i+3][::-1]]
+                    self.services += [gap_data[2*i+1:2*i+3]]
             elif gap_data[0] == "\x04" or gap_data[0] == "\x05":  # Incomplete list of 32-bit UUIDs
                 for i in range((len(gap_data) - 1)/4):
-                    self.services += [gap_data[4*i+1:4*i+5][::-1]]
+                    self.services += [gap_data[4*i+1:4*i+5]]
             elif gap_data[0] == "\x06" or gap_data[0] == "\x07":  # Incomplete list of 128-bit UUIDs
                 for i in range((len(gap_data) - 1)/16):
-                    self.services += [gap_data[16*i+1:16*i+17][::-1]]
+                    self.services += [gap_data[16*i+1:16*i+17]]
 
     def get_services(self):
         self.parse_advertisement_data()
@@ -209,12 +209,31 @@ class BLEConnection(ProcedureManager):
         if not self.wait_for_procedure(timeout=timeout):
             raise BlueGigaModuleException("Read Attribute by Handle did not complete before timeout!")
 
+    def write_by_uuid(self, uuid, value, timeout=3):
+        self.write_by_handle(self.uuid_handle[uuid], value, timeout)
+
     def write_by_handle(self, handle, value, timeout=3):
         self.start_procedure(PROCEDURE)
         self._api.ble_cmd_attclient_attribute_write(self.handle, handle, value)
-        #self._api.ble_cmd_attclient_write_command(self.handle, handle, value)
         if not self.wait_for_procedure(timeout=timeout):
-            raise BlueGigaModuleException("Write Command did not complete before timeout! Connection:%d - Handle:%d" % self.handle, handle)
+            raise BlueGigaModuleException("Write did not complete before timeout! Connection:%d - Handle:%d" % self.handle, handle)
+
+    def read_long_by_handle(self, handle, timeout=3):
+        pass
+
+    def reliable_write_by_uuid(self, uuid, value, offset=0, timeout=3):
+        for handle in self.uuid_handle[uuid]:
+            self.reliable_write_by_handle(handle, value, offset, timeout)
+
+    def reliable_write_by_handle(self, handle, value, offset=0, timeout=3):
+        for i in range((len(value) / 20)+1):
+            chunk = value[20*i+offset:min(20*(i+1)+offset, len(value))]
+            self.start_procedure(PROCEDURE)
+            self._api.ble_cmd_attclient_prepare_write(self.handle, handle, 20*i+offset, chunk)
+            self.wait_for_procedure(timeout=timeout)
+        self.start_procedure(PROCEDURE)
+        self._api.ble_cmd_attclient_execute_write(self.handle, 1) # 1 = commit, 0 = cancel
+        self.wait_for_procedure(timeout=timeout)
 
     def characteristic_subscription(self, characteristic, indicate=True, notify=True):
         descriptor = characteristic.get_descriptor_by_uuid(GATTCharacteristic.CLIENT_CHARACTERISTIC_CONFIG)
@@ -391,7 +410,7 @@ class BlueGigaClient(BlueGigaModule):
 
     def ble_evt_attclient_group_found(self, connection, start, end, uuid):
         super(BlueGigaModule, self).ble_evt_attclient_group_found(connection, start, end, uuid)
-        self.connections[connection].update_service(start, end, uuid[::-1])
+        self.connections[connection].update_service(start, end, uuid)
 
     def ble_evt_attclient_procedure_completed(self, connection, result, chrhandle):
         super(BlueGigaModule, self).ble_evt_attclient_procedure_completed(connection, result, chrhandle)
