@@ -210,7 +210,8 @@ class BLEConnection(ProcedureManager):
             raise BlueGigaModuleException("Read Attribute by Handle did not complete before timeout!")
 
     def write_by_uuid(self, uuid, value, timeout=3):
-        self.write_by_handle(self.uuid_handle[uuid], value, timeout)
+        for handle in self.uuid_handle[uuid]:
+            self.write_by_handle(handle, value, timeout)
 
     def write_by_handle(self, handle, value, timeout=3):
         self.start_procedure(PROCEDURE)
@@ -218,8 +219,15 @@ class BLEConnection(ProcedureManager):
         if not self.wait_for_procedure(timeout=timeout):
             raise BlueGigaModuleException("Write did not complete before timeout! Connection:%d - Handle:%d" % self.handle, handle)
 
+    def read_long_by_uuid(self, uuid, timeout=3):
+        for handle in self.uuid_handle[uuid]:
+            self.read_long_by_handle(self.uuid_handle[uuid])
+
     def read_long_by_handle(self, handle, timeout=3):
-        pass
+        self.start_procedure(PROCEDURE)
+        self._api.ble_cmd_attclient_read_long(self.handle, handle)
+        if not self.wait_for_procedure(timeout=timeout):
+            raise BlueGigaModuleException("Long Read did not complete before timeout! Connection:%d - Handle:%d" % self.handle, handle)
 
     def reliable_write_by_uuid(self, uuid, value, offset=0, timeout=3):
         for handle in self.uuid_handle[uuid]:
