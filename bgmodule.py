@@ -523,6 +523,7 @@ class BlueGigaServer(BlueGigaModule):
 
     def ble_evt_attributes_value(self, connection, reason, handle, offset, value):
         super(BlueGigaServer, self).ble_evt_attributes_value(connection, reason, handle, offset, value)
+        self.update_attribute_cache(handle, offset, value)
 
     def ble_rsp_attributes_read_type(self, handle, result, value):
         super(BlueGigaServer, self).ble_rsp_attributes_read_type(handle, result, value)
@@ -531,10 +532,13 @@ class BlueGigaServer(BlueGigaModule):
 
     def ble_rsp_attributes_read(self, handle, offset, result, value):
         super(BlueGigaServer, self).ble_rsp_attributes_read(handle, offset, result, value)
+        self.update_attribute_cache(handle, offset, value)
+        self.procedure_complete(PROCEDURE)
+
+    def update_attribute_cache(self, handle, offset, value):
         if handle in self.handle_values and offset > 0:
             self.handle_values[handle] = self.handle_values[handle][:offset] + value
         elif offset > 0:
             self.handle_values[handle] = "\x00"*offset + value
         else:
             self.handle_values[handle] = value
-        self.procedure_complete(PROCEDURE)
