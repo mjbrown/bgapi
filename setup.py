@@ -34,13 +34,13 @@ def get_long_description():
 
 setup(
   name='bgapi',
+  packages=['bgapi'],
   version='0.1',
-  description='Interface library for the BlueGiga BLE modules',
+  description='Interface library for BlueGiga BLE112 and BLE113 modules',
   long_description=get_long_description(),
   url='https://github.com/mjbrown/bgapi',
   author="Michael Brown",
   author_email="mjbrown.droid@gmail.com",
-  py_modules=['bgapi', 'bgmodule', 'cmd_def'],
   install_requires=open('requirements.txt').read().split(),
   classifiers=[
       "Development Status :: 3 - Alpha",

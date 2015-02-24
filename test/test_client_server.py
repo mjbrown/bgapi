@@ -3,7 +3,7 @@ import sys
 import logging
 import logging.handlers
 
-from bgapi.bgmodule import BlueGigaModule, GATTCharacteristic, GATTService, BlueGigaClient, BlueGigaServer
+from bgapi.module import BlueGigaModule, GATTCharacteristic, GATTService, BlueGigaClient, BlueGigaServer
 from bgapi.cmd_def import gap_discoverable_mode, gap_connectable_mode
 
 CLIENT_SERIAL = "COM9"
