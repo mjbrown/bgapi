@@ -83,7 +83,7 @@ class GATTCharacteristic(object):
         return (self.properties & 0x02) > 0
 
     def is_write_no_response(self):
-        return (self.properties % 0x04) > 0
+        return (self.properties & 0x04) > 0
 
     def is_writable(self):
         return (self.properties & 0x08) > 0
