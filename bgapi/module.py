@@ -392,10 +392,11 @@ class BlueGigaClient(BlueGigaModule):
 
     def _scan(self, mode, timeout):
         self.scan_responses = None
-        start = time.time()
+        now = start = time.time()
         self._api.ble_cmd_gap_discover(mode=mode)
-        while time.time() < start + timeout:
-            pass
+        while now < start + timeout:
+            time.sleep(timeout - (now - start))
+            now = time.time()
         self._api.ble_cmd_gap_end_procedure()
         return self.scan_responses
 
