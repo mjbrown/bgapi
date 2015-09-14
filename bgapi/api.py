@@ -246,7 +246,7 @@ class BlueGigaAPI(object):
 
     def parse_bgapi_packet(self, packet, callbacks):
         logger.debug('<=[ ' + ' '.join(['%02X' % ord(b) for b in packet ]) + ' ]')
-        packet_type = ord(packet[0]) & 0x80
+        message_type = ord(packet[0]) & 0x80
         technology_type = ord(packet[0]) & 0x78
         #payload_length = ord(packet[1])
         packet_class = ord(packet[2])
@@ -254,7 +254,7 @@ class BlueGigaAPI(object):
         rx_payload = packet[4:]
         if technology_type:
             raise ValueError("Unsupported techlogy type: 0x%02x" % technology_type)
-        if packet_type == 0x00:
+        if message_type == 0x00:
             # 0x00 = BLE response packet
             if packet_class == 0:
                 if packet_command == 0: # ble_rsp_system_reset
@@ -505,7 +505,7 @@ class BlueGigaAPI(object):
                     callbacks.ble_rsp_test_get_channel_map(channel_map=rx_payload[1:])
                 elif packet_command == 5: # ble_rsp_test_debug
                     callbacks.ble_rsp_test_debug(output=rx_payload[1:])
-        elif packet_type == 0x80:
+        elif message_type == 0x80:
             # 0x80 = BLE event packet
             if packet_class == 0:
                 if packet_command == 0: # ble_evt_system_boot
