@@ -15,6 +15,7 @@ class BlueGigaAPI(object):
         self._serial.flushInput()
         self._serial.flushOutput()
         self.rx_buffer = ""
+        self._packet_size = 4
         self._timeout = timeout
         if not callbacks:
             self._callbacks = BlueGigaCallbacks()
@@ -28,14 +29,14 @@ class BlueGigaAPI(object):
         self._serial.close()
 
     def poll_serial(self, max_read_len=MAX_BGAPI_PACKET_SIZE):
-        self.rx_buffer += self._serial.read(max_read_len)
-        while len(self.rx_buffer) >= 2:
-            expected_length = 4 + (ord(self.rx_buffer[0]) & 0x07)*256 + ord(self.rx_buffer[1])
-            if len(self.rx_buffer) < expected_length:
+        self.rx_buffer += self._serial.read(min(self._packet_size, max_read_len))
+        while len(self.rx_buffer) >= self._packet_size:
+            self._packet_size = 4 + (ord(self.rx_buffer[0]) & 0x07)*256 + ord(self.rx_buffer[1])
+            if len(self.rx_buffer) < self._packet_size:
                 break
-            else:
-                self.parse_bgapi_packet(self.rx_buffer[:expected_length], self._callbacks)
-                self.rx_buffer = self.rx_buffer[expected_length:]
+            self.parse_bgapi_packet(self.rx_buffer[:self._packet_size], self._callbacks)
+            self.rx_buffer = self.rx_buffer[self._packet_size:]
+            self._packet_size = 4
 
     def start_daemon(self):
         """
