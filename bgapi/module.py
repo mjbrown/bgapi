@@ -113,6 +113,7 @@ class GATTCharacteristic(object):
 class ProcedureManager(object):
     def __init__(self):
         self._event = Event()
+        self.type = False
 
     def start_procedure(self, type):
         self.type = type
