@@ -24,11 +24,11 @@ class BlueGigaAPI(object):
     def _run(self):
         self.rx_buffer = ""
         while (self._continue):
-            self.poll_serial(bytes=1)
+            self.poll_serial(max_read_len=1)
         self._serial.close()
 
-    def poll_serial(self, bytes=MAX_BGAPI_PACKET_SIZE):
-        self.rx_buffer += self._serial.read(bytes)
+    def poll_serial(self, max_read_len=MAX_BGAPI_PACKET_SIZE):
+        self.rx_buffer += self._serial.read(max_read_len)
         while len(self.rx_buffer) >= 2:
             expected_length = 4 + (ord(self.rx_buffer[0]) & 0x07)*256 + ord(self.rx_buffer[1])
             if len(self.rx_buffer) < expected_length:
