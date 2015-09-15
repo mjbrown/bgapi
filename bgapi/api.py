@@ -60,189 +60,188 @@ class BlueGigaAPI(object):
     def daemon_running(self):
         return self._continue
 
-    def send_command(self, cmd):
+    def send_command(self, packet_class, packet_command, payload=b''):
         """
         It is easier to use the ble_cmd methods, use this if you know how to compose your own BGAPI packets.
-        :param cmd: Data to be sent over serial
-        :return:
         """
+        cmd = struct.pack('>HBB', len(payload), packet_class, packet_command) + payload
         logger.debug('=>[ ' + ' '.join(['%02X' % ord(b) for b in cmd ]) + ' ]')
         self._serial.write(cmd)
 
     def ble_cmd_system_reset(self, boot_in_dfu):
-        self.send_command(struct.pack('<4BB', 0, 1, 0, 0, boot_in_dfu))
+        self.send_command(0, 0, struct.pack('<B', boot_in_dfu))
     def ble_cmd_system_hello(self):
-        self.send_command(struct.pack('<4B', 0, 0, 0, 1))
+        self.send_command(0, 1)
     def ble_cmd_system_address_get(self):
-        self.send_command(struct.pack('<4B', 0, 0, 0, 2))
+        self.send_command(0, 2)
     def ble_cmd_system_reg_write(self, address, value):
-        self.send_command(struct.pack('<4BHB', 0, 3, 0, 3, address, value))
+        self.send_command(0, 3, struct.pack('<HB', address, value))
     def ble_cmd_system_reg_read(self, address):
-        self.send_command(struct.pack('<4BH', 0, 2, 0, 4, address))
+        self.send_command(0, 4, struct.pack('<H', address))
     def ble_cmd_system_get_counters(self):
-        self.send_command(struct.pack('<4B', 0, 0, 0, 5))
+        self.send_command(0, 5)
     def ble_cmd_system_get_connections(self):
-        self.send_command(struct.pack('<4B', 0, 0, 0, 6))
+        self.send_command(0, 6)
     def ble_cmd_system_read_memory(self, address, length):
-        self.send_command(struct.pack('<4BIB', 0, 5, 0, 7, address, length))
+        self.send_command(0, 7, struct.pack('<IB', address, length))
     def ble_cmd_system_get_info(self):
-        self.send_command(struct.pack('<4B', 0, 0, 0, 8))
+        self.send_command(0, 8)
     def ble_cmd_system_endpoint_tx(self, endpoint, data):
-        self.send_command(struct.pack('<4BBB' + str(len(data)) + 's', 0, 2 + len(data), 0, 9, endpoint, len(data), data))
+        self.send_command(0, 9, struct.pack('<BB' + str(len(data)) + 's', endpoint, len(data), data))
     def ble_cmd_system_whitelist_append(self, address, address_type):
-        self.send_command(struct.pack('<4B6sB', 0, 7, 0, 10, address, address_type))
+        self.send_command(0, 10, struct.pack('<6sB', address, address_type))
     def ble_cmd_system_whitelist_remove(self, address, address_type):
-        self.send_command(struct.pack('<4B6sB', 0, 7, 0, 11, address, address_type))
+        self.send_command(0, 11, struct.pack('<6sB', address, address_type))
     def ble_cmd_system_whitelist_clear(self):
-        self.send_command(struct.pack('<4B', 0, 0, 0, 12))
+        self.send_command(0, 12)
     def ble_cmd_system_endpoint_rx(self, endpoint, size):
-        self.send_command(struct.pack('<4BBB', 0, 2, 0, 13, endpoint, size))
+        self.send_command(0, 13, struct.pack('<BB', endpoint, size))
     def ble_cmd_system_endpoint_set_watermarks(self, endpoint, rx, tx):
-        self.send_command(struct.pack('<4BBBB', 0, 3, 0, 14, endpoint, rx, tx))
+        self.send_command(struct.pack('<BBB', 0, 14, endpoint, rx, tx))
     def ble_cmd_flash_ps_defrag(self):
-        self.send_command(struct.pack('<4B', 0, 0, 1, 0))
+        self.send_command(1, 0)
     def ble_cmd_flash_ps_dump(self):
-        self.send_command(struct.pack('<4B', 0, 0, 1, 1))
+        self.send_command(1, 1)
     def ble_cmd_flash_ps_erase_all(self):
-        self.send_command(struct.pack('<4B', 0, 0, 1, 2))
+        self.send_command(1, 2)
     def ble_cmd_flash_ps_save(self, key, value):
-        self.send_command(struct.pack('<4BHB' + str(len(value)) + 's', 0, 3 + len(value), 1, 3, key, len(value), value))
+        self.send_command(1, 3, struct.pack('<HB' + str(len(value)) + 's', key, len(value), value))
     def ble_cmd_flash_ps_load(self, key):
-        self.send_command(struct.pack('<4BH', 0, 2, 1, 4, key))
+        self.send_command(1, 4, struct.pack('<H', key))
     def ble_cmd_flash_ps_erase(self, key):
-        self.send_command(struct.pack('<4BH', 0, 2, 1, 5, key))
+        self.send_command(1, 5, struct.pack('<H', key))
     def ble_cmd_flash_erase_page(self, page):
-        self.send_command(struct.pack('<4BB', 0, 1, 1, 6, page))
+        self.send_command(1, 6, struct.pack('<B', page))
     def ble_cmd_flash_write_words(self, address, words):
-        self.send_command(struct.pack('<4BHB' + str(len(words)) + 's', 0, 3 + len(words), 1, 7, address, len(words), words))
+        self.send_command(1, 7, struct.pack('<HB' + str(len(words)) + 's', address, len(words), words))
     def ble_cmd_attributes_write(self, handle, offset, value):
-        self.send_command(struct.pack('<4BHBB' + str(len(value)) + 's', 0, 4 + len(value), 2, 0, handle, offset, len(value), value))
+        self.send_command(2, 0, struct.pack('<HBB' + str(len(value)) + 's', handle, offset, len(value), value))
     def ble_cmd_attributes_read(self, handle, offset):
-        self.send_command(struct.pack('<4BHH', 0, 4, 2, 1, handle, offset))
+        self.send_command(2, 1, struct.pack('<HH', handle, offset))
     def ble_cmd_attributes_read_type(self, handle):
-        self.send_command(struct.pack('<4BH', 0, 2, 2, 2, handle))
+        self.send_command(2, 2, struct.pack('<H', handle))
     def ble_cmd_attributes_user_read_response(self, connection, att_error, value):
-        self.send_command(struct.pack('<4BBBB' + str(len(value)) + 's', 0, 3 + len(value), 2, 3, connection, att_error, len(value), value))
+        self.send_command(2, 3, struct.pack('<BBB' + str(len(value)) + 's', connection, att_error, len(value), value))
     def ble_cmd_attributes_user_write_response(self, connection, att_error):
-        self.send_command(struct.pack('<4BBB', 0, 2, 2, 4, connection, att_error))
+        self.send_command(2, 4, struct.pack('<BB', connection, att_error))
     def ble_cmd_connection_disconnect(self, connection):
-        self.send_command(struct.pack('<4BB', 0, 1, 3, 0, connection))
+        self.send_command(3, 0, struct.pack('<B', connection))
     def ble_cmd_connection_get_rssi(self, connection):
-        self.send_command(struct.pack('<4BB', 0, 1, 3, 1, connection))
+        self.send_command(3, 1, struct.pack('<B', connection))
     def ble_cmd_connection_update(self, connection, interval_min, interval_max, latency, timeout):
-        self.send_command(struct.pack('<4BBHHHH', 0, 9, 3, 2, connection, interval_min, interval_max, latency, timeout))
+        self.send_command(3, 2, struct.pack('<BHHHH', connection, interval_min, interval_max, latency, timeout))
     def ble_cmd_connection_version_update(self, connection):
-        self.send_command(struct.pack('<4BB', 0, 1, 3, 3, connection))
+        self.send_command(3, 3, struct.pack('<B', connection))
     def ble_cmd_connection_channel_map_get(self, connection):
-        self.send_command(struct.pack('<4BB', 0, 1, 3, 4, connection))
+        self.send_command(3, 4, struct.pack('<B', connection))
     def ble_cmd_connection_channel_map_set(self, connection, map):
-        self.send_command(struct.pack('<4BBB' + str(len(map)) + 's', 0, 2 + len(map), 3, 5, connection, len(map), map))
+        self.send_command(3, 5, struct.pack('<BB' + str(len(map)) + 's', connection, len(map), map))
     def ble_cmd_connection_features_get(self, connection):
-        self.send_command(struct.pack('<4BB', 0, 1, 3, 6, connection))
+        self.send_command(3, 6, struct.pack('<B', connection))
     def ble_cmd_connection_get_status(self, connection):
-        self.send_command(struct.pack('<4BB', 0, 1, 3, 7, connection))
+        self.send_command(3, 7, struct.pack('<B', connection))
     def ble_cmd_connection_raw_tx(self, connection, data):
-        self.send_command(struct.pack('<4BBB' + str(len(data)) + 's', 0, 2 + len(data), 3, 8, connection, len(data), data))
+        self.send_command(3, 8, struct.pack('<BB' + str(len(data)) + 's', connection, len(data), data))
     def ble_cmd_attclient_find_by_type_value(self, connection, start, end, uuid, value):
-        self.send_command(struct.pack('<4BBHHHB' + str(len(value)) + 's', 0, 8 + len(value), 4, 0, connection, start, end, uuid, len(value), value))
+        self.send_command(4, 0, struct.pack('<BHHHB' + str(len(value)) + 's', connection, start, end, uuid, len(value), value))
     def ble_cmd_attclient_read_by_group_type(self, connection, start, end, uuid): # =>[ 00 08 04 01 00 01 00 FF FF 02 00 28 ]
-        self.send_command(struct.pack('<4BBHHB' + str(len(uuid)) + 's', 0, 6 + len(uuid), 4, 1, connection, start, end, len(uuid), uuid))
+        self.send_command(4, 1, struct.pack('<BHHB' + str(len(uuid)) + 's', connection, start, end, len(uuid), uuid))
     def ble_cmd_attclient_read_by_type(self, connection, start, end, uuid):
-        self.send_command(struct.pack('<4BBHHB' + str(len(uuid)) + 's', 0, 6 + len(uuid), 4, 2, connection, start, end, len(uuid), uuid))
+        self.send_command(4, 2, struct.pack('<BHHB' + str(len(uuid)) + 's', connection, start, end, len(uuid), uuid))
     def ble_cmd_attclient_find_information(self, connection, start, end):
-        self.send_command(struct.pack('<4BBHH', 0, 5, 4, 3, connection, start, end))
+        self.send_command(4, 3, struct.pack('<BHH', connection, start, end))
     def ble_cmd_attclient_read_by_handle(self, connection, chrhandle):
-        self.send_command(struct.pack('<4BBH', 0, 3, 4, 4, connection, chrhandle))
+        self.send_command(4, 4, struct.pack('<BH', connection, chrhandle))
     def ble_cmd_attclient_attribute_write(self, connection, atthandle, data):
-        self.send_command(struct.pack('<4BBHB' + str(len(data)) + 's', 0, 4 + len(data), 4, 5, connection, atthandle, len(data), data))
+        self.send_command(4, 5, struct.pack('<BHB' + str(len(data)) + 's', connection, atthandle, len(data), data))
     def ble_cmd_attclient_write_command(self, connection, atthandle, data):
-        self.send_command(struct.pack('<4BBHB' + str(len(data)) + 's', 0, 4 + len(data), 4, 6, connection, atthandle, len(data), data))
+        self.send_command(4, 6, struct.pack('<BHB' + str(len(data)) + 's', connection, atthandle, len(data), data))
     def ble_cmd_attclient_indicate_confirm(self, connection):
-        self.send_command(struct.pack('<4BB', 0, 1, 4, 7, connection))
+        self.send_command(4, 7, struct.pack('<B', connection))
     def ble_cmd_attclient_read_long(self, connection, chrhandle):
-        self.send_command(struct.pack('<4BBH', 0, 3, 4, 8, connection, chrhandle))
+        self.send_command(4, 8, struct.pack('<BH', connection, chrhandle))
     def ble_cmd_attclient_prepare_write(self, connection, atthandle, offset, data):
-        self.send_command(struct.pack('<4BBHHB' + str(len(data)) + 's', 0, 6 + len(data), 4, 9, connection, atthandle, offset, len(data), data))
+        self.send_command(4, 9, struct.pack('<BHHB' + str(len(data)) + 's', connection, atthandle, offset, len(data), data))
     def ble_cmd_attclient_execute_write(self, connection, commit):
-        self.send_command(struct.pack('<4BBB', 0, 2, 4, 10, connection, commit))
+        self.send_command(4, 10, struct.pack('<BB', connection, commit))
     def ble_cmd_attclient_read_multiple(self, connection, handles):
-        self.send_command(struct.pack('<4BBB' + str(len(handles)) + 's', 0, 2 + len(handles), 4, 11, connection, len(handles), handles))
+        self.send_command(4, 11, struct.pack('<BB' + str(len(handles)) + 's', connection, len(handles), handles))
     def ble_cmd_sm_encrypt_start(self, handle, bonding):
-        self.send_command(struct.pack('<4BBB', 0, 2, 5, 0, handle, bonding))
+        self.send_command(5, 0, struct.pack('<BB', handle, bonding))
     def ble_cmd_sm_set_bondable_mode(self, bondable):
-        self.send_command(struct.pack('<4BB', 0, 1, 5, 1, bondable))
+        self.send_command(5, 1, struct.pack('<B', bondable))
     def ble_cmd_sm_delete_bonding(self, handle):
-        self.send_command(struct.pack('<4BB', 0, 1, 5, 2, handle))
+        self.send_command(5, 2, struct.pack('<B', handle))
     def ble_cmd_sm_set_parameters(self, mitm, min_key_size, io_capabilities):
-        self.send_command(struct.pack('<4BBBB', 0, 3, 5, 3, mitm, min_key_size, io_capabilities))
+        self.send_command(5, 3, struct.pack('<BBB', mitm, min_key_size, io_capabilities))
     def ble_cmd_sm_passkey_entry(self, handle, passkey):
-        self.send_command(struct.pack('<4BBI', 0, 5, 5, 4, handle, passkey))
+        self.send_command(5, 4, struct.pack('<BI', handle, passkey))
     def ble_cmd_sm_get_bonds(self):
-        self.send_command(struct.pack('<4B', 0, 0, 5, 5))
+        self.send_command(5, 5)
     def ble_cmd_sm_set_oob_data(self, oob):
-        self.send_command(struct.pack('<4BB' + str(len(oob)) + 's', 0, 1 + len(oob), 5, 6, len(oob), oob))
+        self.send_command(5, 6, struct.pack('<B' + str(len(oob)) + 's', len(oob), oob))
     def ble_cmd_gap_set_privacy_flags(self, peripheral_privacy, central_privacy):
-        self.send_command(struct.pack('<4BBB', 0, 2, 6, 0, peripheral_privacy, central_privacy))
+        self.send_command(6, 0, struct.pack('<BB', peripheral_privacy, central_privacy))
     def ble_cmd_gap_set_mode(self, discover, connect):
-        self.send_command(struct.pack('<4BBB', 0, 2, 6, 1, discover, connect))
+        self.send_command(6, 1, struct.pack('<BB', discover, connect))
     def ble_cmd_gap_discover(self, mode):
-        self.send_command(struct.pack('<4BB', 0, 1, 6, 2, mode))
+        self.send_command(6, 2, struct.pack('<B', mode))
     def ble_cmd_gap_connect_direct(self, address, addr_type, conn_interval_min, conn_interval_max, timeout, latency):
-        self.send_command(struct.pack('<4B6sBHHHH', 0, 15, 6, 3, address, addr_type, conn_interval_min, conn_interval_max, timeout, latency))
+        self.send_command(6, 3, struct.pack('<6sBHHHH', address, addr_type, conn_interval_min, conn_interval_max, timeout, latency))
     def ble_cmd_gap_end_procedure(self):
-        self.send_command(struct.pack('<4B', 0, 0, 6, 4))
+        self.send_command(6, 4)
     def ble_cmd_gap_connect_selective(self, conn_interval_min, conn_interval_max, timeout, latency):
-        self.send_command(struct.pack('<4BHHHH', 0, 8, 6, 5, conn_interval_min, conn_interval_max, timeout, latency))
+        self.send_command(6, 5, struct.pack('<HHHH', conn_interval_min, conn_interval_max, timeout, latency))
     def ble_cmd_gap_set_filtering(self, scan_policy, adv_policy, scan_duplicate_filtering):
-        self.send_command(struct.pack('<4BBBB', 0, 3, 6, 6, scan_policy, adv_policy, scan_duplicate_filtering))
+        self.send_command(6, 6, struct.pack('<BBB', scan_policy, adv_policy, scan_duplicate_filtering))
     def ble_cmd_gap_set_scan_parameters(self, scan_interval, scan_window, active):
-        self.send_command(struct.pack('<4BHHB', 0, 5, 6, 7, scan_interval, scan_window, active))
+        self.send_command(6, 7, struct.pack('<HHB', scan_interval, scan_window, active))
     def ble_cmd_gap_set_adv_parameters(self, adv_interval_min, adv_interval_max, adv_channels):
-        self.send_command(struct.pack('<4BHHB', 0, 5, 6, 8, adv_interval_min, adv_interval_max, adv_channels))
+        self.send_command(6, 8, struct.pack('<HHB', adv_interval_min, adv_interval_max, adv_channels))
     def ble_cmd_gap_set_adv_data(self, set_scanrsp, adv_data):
-        self.send_command(struct.pack('<4BBB' + str(len(adv_data)) + 's', 0, 2 + len(adv_data), 6, 9, set_scanrsp, len(adv_data), adv_data))
+        self.send_command(6, 9, struct.pack('<BB' + str(len(adv_data)) + 's',  set_scanrsp, len(adv_data), adv_data))
     def ble_cmd_gap_set_directed_connectable_mode(self, address, addr_type):
-        self.send_command(struct.pack('<4B6sB', 0, 7, 6, 10, b''.join(chr(i) for i in address), addr_type))
+        self.send_command(6, 10, struct.pack('<6sB', b''.join(chr(i) for i in address), addr_type))
     def ble_cmd_hardware_io_port_config_irq(self, port, enable_bits, falling_edge):
-        self.send_command(struct.pack('<4BBBB', 0, 3, 7, 0, port, enable_bits, falling_edge))
+        self.send_command(7, 0, struct.pack('<BBB', port, enable_bits, falling_edge))
     def ble_cmd_hardware_set_soft_timer(self, time, handle, single_shot):
-        self.send_command(struct.pack('<4BIBB', 0, 6, 7, 1, time, handle, single_shot))
+        self.send_command(7, 1, struct.pack('<IBB', time, handle, single_shot))
     def ble_cmd_hardware_adc_read(self, input, decimation, reference_selection):
-        self.send_command(struct.pack('<4BBBB', 0, 3, 7, 2, input, decimation, reference_selection))
+        self.send_command(7, 2, struct.pack('<BBB', input, decimation, reference_selection))
     def ble_cmd_hardware_io_port_config_direction(self, port, direction):
-        self.send_command(struct.pack('<4BBB', 0, 2, 7, 3, port, direction))
+        self.send_command(7, 3, struct.pack('<BB', port, direction))
     def ble_cmd_hardware_io_port_config_function(self, port, function):
-        self.send_command(struct.pack('<4BBB', 0, 2, 7, 4, port, function))
+        self.send_command(7, 4, struct.pack('<BB', port, function))
     def ble_cmd_hardware_io_port_config_pull(self, port, tristate_mask, pull_up):
-        self.send_command(struct.pack('<4BBBB', 0, 3, 7, 5, port, tristate_mask, pull_up))
+        self.send_command(7, 5, struct.pack('<BBB', port, tristate_mask, pull_up))
     def ble_cmd_hardware_io_port_write(self, port, mask, data):
-        self.send_command(struct.pack('<4BBBB', 0, 3, 7, 6, port, mask, data))
+        self.send_command(7, 6, struct.pack('<BBB', port, mask, data))
     def ble_cmd_hardware_io_port_read(self, port, mask):
-        self.send_command(struct.pack('<4BBB', 0, 2, 7, 7, port, mask))
+        self.send_command(7, 7, struct.pack('<BB', port, mask))
     def ble_cmd_hardware_spi_config(self, channel, polarity, phase, bit_order, baud_e, baud_m):
-        self.send_command(struct.pack('<4BBBBBBB', 0, 6, 7, 8, channel, polarity, phase, bit_order, baud_e, baud_m))
+        self.send_command(7, 8, struct.pack('<BBBBBB', channel, polarity, phase, bit_order, baud_e, baud_m))
     def ble_cmd_hardware_spi_transfer(self, channel, data):
-        self.send_command(struct.pack('<4BBB' + str(len(data)) + 's', 0, 2 + len(data), 7, 9, channel, len(data), data))
+        self.send_command(7, 9, struct.pack('<BB' + str(len(data)) + 's', channel, len(data), data))
     def ble_cmd_hardware_i2c_read(self, address, stop, length):
-        self.send_command(struct.pack('<4BBBB', 0, 3, 7, 10, address, stop, length))
+        self.send_command(7, 10, struct.pack('<BBB', address, stop, length))
     def ble_cmd_hardware_i2c_write(self, address, stop, data):
-        self.send_command(struct.pack('<4BBBB' + str(len(data)) + 's', 0, 3 + len(data), 7, 11, address, stop, len(data), data))
+        self.send_command(7, 11, struct.pack('<BBB' + str(len(data)) + 's', address, stop, len(data), data))
     def ble_cmd_hardware_set_txpower(self, power):
-        self.send_command(struct.pack('<4BB', 0, 1, 7, 12, power))
+        self.send_command(7, 12, struct.pack('<B', power))
     def ble_cmd_hardware_timer_comparator(self, timer, channel, mode, comparator_value):
-        self.send_command(struct.pack('<4BBBBH', 0, 5, 7, 13, timer, channel, mode, comparator_value))
+        self.send_command(7, 13, struct.pack('<BBBH', timer, channel, mode, comparator_value))
     def ble_cmd_test_phy_tx(self, channel, length, type):
-        self.send_command(struct.pack('<4BBBB', 0, 3, 8, 0, channel, length, type))
+        self.send_command(8, 0, struct.pack('<BBB', channel, length, type))
     def ble_cmd_test_phy_rx(self, channel):
-        self.send_command(struct.pack('<4BB', 0, 1, 8, 1, channel))
+        self.send_command(8, 1, struct.pack('<B', channel))
     def ble_cmd_test_phy_end(self):
-        self.send_command(struct.pack('<4B', 0, 0, 8, 2))
+        self.send_command(8, 2)
     def ble_cmd_test_phy_reset(self):
-        self.send_command(struct.pack('<4B', 0, 0, 8, 3))
+        self.send_command(8, 3)
     def ble_cmd_test_get_channel_map(self):
-        self.send_command(struct.pack('<4B', 0, 0, 8, 4))
+        self.send_command(8, 4)
     def ble_cmd_test_debug(self, input):
-        self.send_command(struct.pack('<4BB' + str(len(input)) + 's', 0, 1 + len(input), 8, 5, len(input), input))
+        self.send_command(8, 5, struct.pack('<B' + str(len(input)) + 's', len(input), input))
 
     def parse_bgapi_packet(self, packet, callbacks):
         logger.debug('<=[ ' + ' '.join(['%02X' % ord(b) for b in packet ]) + ' ]')
