@@ -36,7 +36,7 @@ class BlueGigaAPI(object):
                 break
             packet, self.rx_buffer = self.rx_buffer[:self._packet_size], self.rx_buffer[self._packet_size:]
             self._packet_size = 4
-            self.parse_bgapi_packet(packet, self._callbacks)
+            self.parse_bgapi_packet(packet)
 
     def start_daemon(self):
         """
@@ -243,7 +243,7 @@ class BlueGigaAPI(object):
     def ble_cmd_test_debug(self, input):
         self.send_command(8, 5, struct.pack('<B' + str(len(input)) + 's', len(input), input))
 
-    def parse_bgapi_packet(self, packet, callbacks):
+    def parse_bgapi_packet(self, packet, callbacks=None):
         logger.debug('<=[ ' + ' '.join(['%02X' % ord(b) for b in packet ]) + ' ]')
         message_type = ord(packet[0]) & 0x80
         technology_type = ord(packet[0]) & 0x78
@@ -260,7 +260,9 @@ class BlueGigaAPI(object):
             # 0x80 = BLE event packet
             self.parse_bgapi_event(packet_class, packet_command, rx_payload, callbacks)
 
-    def parse_bgapi_response(self, packet_class, packet_command, rx_payload, callbacks):
+    def parse_bgapi_response(self, packet_class, packet_command, rx_payload, callbacks=None):
+        if callbacks is None:
+            callbacks = self._callbacks
         if packet_class == 0:
             if packet_command == 0: # ble_rsp_system_reset
                 callbacks.ble_rsp_system_reset()
@@ -511,7 +513,9 @@ class BlueGigaAPI(object):
             elif packet_command == 5: # ble_rsp_test_debug
                 callbacks.ble_rsp_test_debug(output=rx_payload[1:])
 
-    def parse_bgapi_event(self, packet_class, packet_command, rx_payload, callbacks):
+    def parse_bgapi_event(self, packet_class, packet_command, rx_payload, callbacks=None):
+        if callbacks is None:
+            callbacks = self._callbacks
         if packet_class == 0:
             if packet_command == 0: # ble_evt_system_boot
                 major, minor, patch, build, ll_version, protocol_version, hw = struct.unpack('<HHHHHBB', rx_payload[:12])
