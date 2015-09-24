@@ -5,6 +5,7 @@ import operator
 from api import BlueGigaAPI, BlueGigaCallbacks
 from cmd_def import gap_discoverable_mode, gap_connectable_mode, gap_discover_mode, \
     connection_status_mask, sm_io_capability, RESULT_CODE
+from threading import Event
 import logging
 import sys
 
@@ -111,22 +112,19 @@ class GATTCharacteristic(object):
 
 class ProcedureManager(object):
     def __init__(self):
-        self.procedure_in_progress = False
+        self._event = Event()
+        self.type = False
 
     def start_procedure(self, type):
-        self.procedure_in_progress = type
+        self.type = type
+        self._event.clear()
 
     def wait_for_procedure(self, timeout=3):
-        start = time.time()
-        while (self.procedure_in_progress and time.time() < start + timeout):
-            pass
-        if time.time() > start + timeout:
-            return False
-        return True
+        return self._event.wait(timeout)
 
     def procedure_complete(self, type):
-        if (self.procedure_in_progress == type):
-            self.procedure_in_progress = False
+        if self.type == type:
+            self._event.set()
 
 
 class BLEConnection(ProcedureManager):
