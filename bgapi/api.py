@@ -265,253 +265,253 @@ class BlueGigaAPI(object):
             callbacks = self._callbacks
         if packet_class == 0:
             if packet_command == 0:
-                callbacks.ble_rsp_system_reset()
+                callbacks.ble_rsp('ble_rsp_system_reset')
             elif packet_command == 1:
-                callbacks.ble_rsp_system_hello()
+                callbacks.ble_rsp('ble_rsp_system_hello')
             elif packet_command == 2:
-                callbacks.ble_rsp_system_address_get(address=rx_payload)
+                callbacks.ble_rsp('ble_rsp_system_address_get', address=rx_payload)
             elif packet_command == 3:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_system_reg_write(result=result)
+                callbacks.ble_rsp('ble_rsp_system_reg_write', result=result)
             elif packet_command == 4:
                 address, value = struct.unpack('<HB', rx_payload[:3])
-                callbacks.ble_rsp_system_reg_read(address=address, value=value)
+                callbacks.ble_rsp('ble_rsp_system_reg_read', address=address, value=value)
             elif packet_command == 5:
                 txok, txretry, rxok, rxfail, mbuf = struct.unpack('<BBBBB', rx_payload[:5])
-                callbacks.ble_rsp_system_get_counters(txok=txok, txretry=txretry, rxok=rxok, rxfail=rxfail, mbuf=mbuf)
+                callbacks.ble_rsp('ble_rsp_system_get_counters', txok=txok, txretry=txretry, rxok=rxok, rxfail=rxfail, mbuf=mbuf)
             elif packet_command == 6:
                 maxconn = struct.unpack('<B', rx_payload[:1])[0]
-                callbacks.ble_rsp_system_get_connections(maxconn=maxconn)
+                callbacks.ble_rsp('ble_rsp_system_get_connections', maxconn=maxconn)
             elif packet_command == 7:
                 address, data_len = struct.unpack('<IB', rx_payload[:5])
-                callbacks.ble_rsp_system_read_memory(address=address, data=rx_payload[5:])
+                callbacks.ble_rsp('ble_rsp_system_read_memory', address=address, data=rx_payload[5:])
             elif packet_command == 8:
                 major, minor, patch, build, ll_version, protocol_version, hw = struct.unpack('<HHHHHBB', rx_payload[:12])
-                callbacks.ble_rsp_system_get_info(major=major, minor=minor, patch=patch, build=build, ll_version=ll_version, protocol_version=protocol_version, hw=hw)
+                callbacks.ble_rsp('ble_rsp_system_get_info', major=major, minor=minor, patch=patch, build=build, ll_version=ll_version, protocol_version=protocol_version, hw=hw)
             elif packet_command == 9:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_system_endpoint_tx(result=result)
+                callbacks.ble_rsp('ble_rsp_system_endpoint_tx', result=result)
             elif packet_command == 10:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_system_whitelist_append(result=result)
+                callbacks.ble_rsp('ble_rsp_system_whitelist_append', result=result)
             elif packet_command == 11:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_system_whitelist_remove(result=result)
+                callbacks.ble_rsp('ble_rsp_system_whitelist_remove', result=result)
             elif packet_command == 12:
-                callbacks.ble_rsp_system_whitelist_clear()
+                callbacks.ble_rsp('ble_rsp_system_whitelist_clear')
             elif packet_command == 13:
                 result, data_len = struct.unpack('<HB', rx_payload[:3])
-                callbacks.ble_rsp_system_endpoint_rx(result=result, data=rx_payload[3:])
+                callbacks.ble_rsp('ble_rsp_system_endpoint_rx', result=result, data=rx_payload[3:])
             elif packet_command == 14:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_system_endpoint_set_watermarks(result=result)
+                callbacks.ble_rsp('ble_rsp_system_endpoint_set_watermarks', result=result)
         elif packet_class == 1:
             if packet_command == 0:
-                callbacks.ble_rsp_flash_ps_defrag()
+                callbacks.ble_rsp('ble_rsp_flash_ps_defrag')
             elif packet_command == 1:
-                callbacks.ble_rsp_flash_ps_dump()
+                callbacks.ble_rsp('ble_rsp_flash_ps_dump')
             elif packet_command == 2:
-                callbacks.ble_rsp_flash_ps_erase_all()
+                callbacks.ble_rsp('ble_rsp_flash_ps_erase_all')
             elif packet_command == 3:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_flash_ps_save(result=result)
+                callbacks.ble_rsp('ble_rsp_flash_ps_save', result=result)
             elif packet_command == 4:
                 result, value_len = struct.unpack('<HB', rx_payload[:3])
-                callbacks.ble_rsp_flash_ps_load(result=result, value=rx_payload[3:])
+                callbacks.ble_rsp('ble_rsp_flash_ps_load', result=result, value=rx_payload[3:])
             elif packet_command == 5:
-                callbacks.ble_rsp_flash_ps_erase()
+                callbacks.ble_rsp('ble_rsp_flash_ps_erase')
             elif packet_command == 6:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_flash_erase_page(result=result)
+                callbacks.ble_rsp('ble_rsp_flash_erase_page', result=result)
             elif packet_command == 7:
-                callbacks.ble_rsp_flash_write_words()
+                callbacks.ble_rsp('ble_rsp_flash_write_words')
         elif packet_class == 2:
             if packet_command == 0:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_attributes_write(result=result)
+                callbacks.ble_rsp('ble_rsp_attributes_write', result=result)
             elif packet_command == 1:
                 handle, offset, result, value_len = struct.unpack('<HHHB', rx_payload[:7])
-                callbacks.ble_rsp_attributes_read(handle=handle, offset=offset, result=result, value=rx_payload[7:])
+                callbacks.ble_rsp('ble_rsp_attributes_read', handle=handle, offset=offset, result=result, value=rx_payload[7:])
             elif packet_command == 2:
                 handle, result, value_len = struct.unpack('<HHB', rx_payload[:5])
-                callbacks.ble_rsp_attributes_read_type(handle=handle, result=result, value=rx_payload[5:])
+                callbacks.ble_rsp('ble_rsp_attributes_read_type', handle=handle, result=result, value=rx_payload[5:])
             elif packet_command == 3:
-                callbacks.ble_rsp_attributes_user_read_response()
+                callbacks.ble_rsp('ble_rsp_attributes_user_read_response')
             elif packet_command == 4:
-                callbacks.ble_rsp_attributes_user_write_response()
+                callbacks.ble_rsp('ble_rsp_attributes_user_write_response')
         elif packet_class == 3:
             if packet_command == 0:
                 connection, result = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_rsp_connection_disconnect(connection=connection, result=result)
+                callbacks.ble_rsp('ble_rsp_connection_disconnect', connection=connection, result=result)
             elif packet_command == 1:
                 connection, rssi = struct.unpack('<Bb', rx_payload[:2])
-                callbacks.ble_rsp_connection_get_rssi(connection=connection, rssi=rssi)
+                callbacks.ble_rsp('ble_rsp_connection_get_rssi', connection=connection, rssi=rssi)
             elif packet_command == 2:
                 connection, result = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_rsp_connection_update(connection=connection, result=result)
+                callbacks.ble_rsp('ble_rsp_connection_update', connection=connection, result=result)
             elif packet_command == 3:
                 connection, result = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_rsp_connection_version_update(connection=connection, result=result)
+                callbacks.ble_rsp('ble_rsp_connection_version_update', connection=connection, result=result)
             elif packet_command == 4:
                 connection, map_len = struct.unpack('<BB', rx_payload[:2])
-                callbacks.ble_rsp_connection_channel_map_get(connection=connection, map=rx_payload[2:])
+                callbacks.ble_rsp('ble_rsp_connection_channel_map_get', connection=connection, map=rx_payload[2:])
             elif packet_command == 5:
                 connection, result = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_rsp_connection_channel_map_set(connection=connection, result=result)
+                callbacks.ble_rsp('ble_rsp_connection_channel_map_set', connection=connection, result=result)
             elif packet_command == 6:
                 connection, result = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_rsp_connection_features_get(connection=connection, result=result)
+                callbacks.ble_rsp('ble_rsp_connection_features_get', connection=connection, result=result)
             elif packet_command == 7:
                 connection = struct.unpack('<B', rx_payload[:1])[0]
-                callbacks.ble_rsp_connection_get_status(connection=connection)
+                callbacks.ble_rsp('ble_rsp_connection_get_status', connection=connection)
             elif packet_command == 8:
                 connection = struct.unpack('<B', rx_payload[:1])[0]
-                callbacks.ble_rsp_connection_raw_tx(connection=connection)
+                callbacks.ble_rsp('ble_rsp_connection_raw_tx', connection=connection)
         elif packet_class == 4:
             if packet_command == 0:
                 connection, result = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_rsp_attclient_find_by_type_value(connection=connection, result=result)
+                callbacks.ble_rsp('ble_rsp_attclient_find_by_type_value', connection=connection, result=result)
             elif packet_command == 1:
                 connection, result = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_rsp_attclient_read_by_group_type(connection=connection, result=result)
+                callbacks.ble_rsp('ble_rsp_attclient_read_by_group_type', connection=connection, result=result)
             elif packet_command == 2:
                 connection, result = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_rsp_attclient_read_by_type(connection=connection, result=result)
+                callbacks.ble_rsp('ble_rsp_attclient_read_by_type', connection=connection, result=result)
             elif packet_command == 3:
                 connection, result = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_rsp_attclient_find_information(connection=connection, result=result)
+                callbacks.ble_rsp('ble_rsp_attclient_find_information', connection=connection, result=result)
             elif packet_command == 4:
                 connection, result = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_rsp_attclient_read_by_handle(connection=connection, result=result)
+                callbacks.ble_rsp('ble_rsp_attclient_read_by_handle', connection=connection, result=result)
             elif packet_command == 5:
                 connection, result = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_rsp_attclient_attribute_write(connection=connection, result=result)
+                callbacks.ble_rsp('ble_rsp_attclient_attribute_write', connection=connection, result=result)
             elif packet_command == 6:
                 connection, result = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_rsp_attclient_write_command(connection=connection, result=result)
+                callbacks.ble_rsp('ble_rsp_attclient_write_command', connection=connection, result=result)
             elif packet_command == 7:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_attclient_indicate_confirm(result=result)
+                callbacks.ble_rsp('ble_rsp_attclient_indicate_confirm', result=result)
             elif packet_command == 8:
                 connection, result = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_rsp_attclient_read_long(connection=connection, result=result)
+                callbacks.ble_rsp('ble_rsp_attclient_read_long', connection=connection, result=result)
             elif packet_command == 9:
                 connection, result = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_rsp_attclient_prepare_write(connection=connection, result=result)
+                callbacks.ble_rsp('ble_rsp_attclient_prepare_write', connection=connection, result=result)
             elif packet_command == 10:
                 connection, result = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_rsp_attclient_execute_write(connection=connection, result=result)
+                callbacks.ble_rsp('ble_rsp_attclient_execute_write', connection=connection, result=result)
             elif packet_command == 11:
                 connection, result = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_rsp_attclient_read_multiple(connection=connection, result=result)
+                callbacks.ble_rsp('ble_rsp_attclient_read_multiple', connection=connection, result=result)
         elif packet_class == 5:
             if packet_command == 0:
                 handle, result = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_rsp_sm_encrypt_start(handle=handle, result=result)
+                callbacks.ble_rsp('ble_rsp_sm_encrypt_start', handle=handle, result=result)
             elif packet_command == 1:
-                callbacks.ble_rsp_sm_set_bondable_mode()
+                callbacks.ble_rsp('ble_rsp_sm_set_bondable_mode')
             elif packet_command == 2:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_sm_delete_bonding(result=result)
+                callbacks.ble_rsp('ble_rsp_sm_delete_bonding', result=result)
             elif packet_command == 3:
-                callbacks.ble_rsp_sm_set_parameters()
+                callbacks.ble_rsp('ble_rsp_sm_set_parameters')
             elif packet_command == 4:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_sm_passkey_entry(result=result)
+                callbacks.ble_rsp('ble_rsp_sm_passkey_entry', result=result)
             elif packet_command == 5:
                 bonds = struct.unpack('<B', rx_payload[:1])[0]
-                callbacks.ble_rsp_sm_get_bonds(bonds=bonds)
+                callbacks.ble_rsp('ble_rsp_sm_get_bonds', bonds=bonds)
             elif packet_command == 6:
-                callbacks.ble_rsp_sm_set_oob_data()
+                callbacks.ble_rsp('ble_rsp_sm_set_oob_data')
         elif packet_class == 6:
             if packet_command == 0:
-                callbacks.ble_rsp_gap_set_privacy_flags({  })
+                callbacks.ble_rsp('ble_rsp_gap_set_privacy_flags', {  })
             elif packet_command == 1:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_gap_set_mode(result=result)
+                callbacks.ble_rsp('ble_rsp_gap_set_mode', result=result)
             elif packet_command == 2:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_gap_discover(result=result)
+                callbacks.ble_rsp('ble_rsp_gap_discover', result=result)
             elif packet_command == 3:
                 result, connection_handle = struct.unpack('<HB', rx_payload[:3])
-                callbacks.ble_rsp_gap_connect_direct(result=result, connection_handle=connection_handle)
+                callbacks.ble_rsp('ble_rsp_gap_connect_direct', result=result, connection_handle=connection_handle)
             elif packet_command == 4:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_gap_end_procedure(result=result)
+                callbacks.ble_rsp('ble_rsp_gap_end_procedure', result=result)
             elif packet_command == 5:
                 result, connection_handle = struct.unpack('<HB', rx_payload[:3])
-                callbacks.ble_rsp_gap_connect_selective(result=result, connection_handle=connection_handle)
+                callbacks.ble_rsp('ble_rsp_gap_connect_selective', result=result, connection_handle=connection_handle)
             elif packet_command == 6:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_gap_set_filtering(result=result)
+                callbacks.ble_rsp('ble_rsp_gap_set_filtering', result=result)
             elif packet_command == 7:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_gap_set_scan_parameters(result=result)
+                callbacks.ble_rsp('ble_rsp_gap_set_scan_parameters', result=result)
             elif packet_command == 8:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_gap_set_adv_parameters(result=result)
+                callbacks.ble_rsp('ble_rsp_gap_set_adv_parameters', result=result)
             elif packet_command == 9:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_gap_set_adv_data(result=result)
+                callbacks.ble_rsp('ble_rsp_gap_set_adv_data', result=result)
             elif packet_command == 10:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_gap_set_directed_connectable_mode(result=result)
+                callbacks.ble_rsp('ble_rsp_gap_set_directed_connectable_mode', result=result)
         elif packet_class == 7:
             if packet_command == 0:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_hardware_io_port_config_irq(result=result)
+                callbacks.ble_rsp('ble_rsp_hardware_io_port_config_irq', result=result)
             elif packet_command == 1:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_hardware_set_soft_timer(result=result)
+                callbacks.ble_rsp('ble_rsp_hardware_set_soft_timer', result=result)
             elif packet_command == 2:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_hardware_adc_read(result=result)
+                callbacks.ble_rsp('ble_rsp_hardware_adc_read', result=result)
             elif packet_command == 3:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_hardware_io_port_config_direction(result=result)
+                callbacks.ble_rsp('ble_rsp_hardware_io_port_config_direction', result=result)
             elif packet_command == 4:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_hardware_io_port_config_function(result=result)
+                callbacks.ble_rsp('ble_rsp_hardware_io_port_config_function', result=result)
             elif packet_command == 5:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_hardware_io_port_config_pull(result=result)
+                callbacks.ble_rsp('ble_rsp_hardware_io_port_config_pull', result=result)
             elif packet_command == 6:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_hardware_io_port_write(result=result)
+                callbacks.ble_rsp('ble_rsp_hardware_io_port_write', result=result)
             elif packet_command == 7:
                 result, port, data = struct.unpack('<HBB', rx_payload[:4])
-                callbacks.ble_rsp_hardware_io_port_read(result=result, port=port, data=data)
+                callbacks.ble_rsp('ble_rsp_hardware_io_port_read', result=result, port=port, data=data)
             elif packet_command == 8:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_hardware_spi_config(result=result)
+                callbacks.ble_rsp('ble_rsp_hardware_spi_config', result=result)
             elif packet_command == 9:
                 result, channel, data_len = struct.unpack('<HBB', rx_payload[:4])
-                callbacks.ble_rsp_hardware_spi_transfer(result=result, channel=channel, data=rx_payload[4:])
+                callbacks.ble_rsp('ble_rsp_hardware_spi_transfer', result=result, channel=channel, data=rx_payload[4:])
             elif packet_command == 10:
                 result, data_len = struct.unpack('<HB', rx_payload[:3])
-                callbacks.ble_rsp_hardware_i2c_read(result=result, data=rx_payload[3:])
+                callbacks.ble_rsp('ble_rsp_hardware_i2c_read', result=result, data=rx_payload[3:])
             elif packet_command == 11:
                 written = struct.unpack('<B', rx_payload[:1])[0]
-                callbacks.ble_rsp_hardware_i2c_write(written=written)
+                callbacks.ble_rsp('ble_rsp_hardware_i2c_write', written=written)
             elif packet_command == 12:
-                callbacks.ble_rsp_hardware_set_txpower()
+                callbacks.ble_rsp('ble_rsp_hardware_set_txpower')
             elif packet_command == 13:
                 result = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_hardware_timer_comparator(result=result)
+                callbacks.ble_rsp('ble_rsp_hardware_timer_comparator', result=result)
         elif packet_class == 8:
             if packet_command == 0:
-                callbacks.ble_rsp_test_phy_tx()
+                callbacks.ble_rsp('ble_rsp_test_phy_tx')
             elif packet_command == 1:
-                callbacks.ble_rsp_test_phy_rx()
+                callbacks.ble_rsp('ble_rsp_test_phy_rx')
             elif packet_command == 2:
                 counter = struct.unpack('<H', rx_payload[:2])[0]
-                callbacks.ble_rsp_test_phy_end(counter=counter)
+                callbacks.ble_rsp('ble_rsp_test_phy_end', counter=counter)
             elif packet_command == 3:
-                callbacks.ble_rsp_test_phy_reset()
+                callbacks.ble_rsp('ble_rsp_test_phy_reset')
             elif packet_command == 4:
-                callbacks.ble_rsp_test_get_channel_map(channel_map=rx_payload[1:])
+                callbacks.ble_rsp('ble_rsp_test_get_channel_map', channel_map=rx_payload[1:])
             elif packet_command == 5:
-                callbacks.ble_rsp_test_debug(output=rx_payload[1:])
+                callbacks.ble_rsp('ble_rsp_test_debug', output=rx_payload[1:])
 
     def parse_bgapi_event(self, packet_class, packet_command, rx_payload, callbacks=None):
         if callbacks is None:
@@ -519,109 +519,126 @@ class BlueGigaAPI(object):
         if packet_class == 0:
             if packet_command == 0:
                 major, minor, patch, build, ll_version, protocol_version, hw = struct.unpack('<HHHHHBB', rx_payload[:12])
-                callbacks.ble_evt_system_boot(major=major, minor=minor, patch=patch, build=build, ll_version=ll_version, protocol_version=protocol_version, hw=hw)
+                callbacks.ble_evt('ble_evt_system_boot', major=major, minor=minor, patch=patch, build=build, ll_version=ll_version, protocol_version=protocol_version, hw=hw)
             elif packet_command == 1:
-                callbacks.ble_evt_system_debug(data=rx_payload[1:])
+                callbacks.ble_evt('ble_evt_system_debug', data=rx_payload[1:])
             elif packet_command == 2:
                 endpoint, data = struct.unpack('<BB', rx_payload[:2])
-                callbacks.ble_evt_system_endpoint_watermark_rx(endpoint=endpoint, data=data)
+                callbacks.ble_evt('ble_evt_system_endpoint_watermark_rx', endpoint=endpoint, data=data)
             elif packet_command == 3:
                 endpoint, data = struct.unpack('<BB', rx_payload[:2])
-                callbacks.ble_evt_system_endpoint_watermark_tx(endpoint=endpoint, data=data)
+                callbacks.ble_evt('ble_evt_system_endpoint_watermark_tx', endpoint=endpoint, data=data)
             elif packet_command == 4:
                 address, reason = struct.unpack('<HH', rx_payload[:4])
-                callbacks.ble_evt_system_script_failure(address=address, reason=reason)
+                callbacks.ble_evt('ble_evt_system_script_failure', address=address, reason=reason)
             elif packet_command == 5:
-                callbacks.ble_evt_system_no_license_key({  })
+                callbacks.ble_evt('ble_evt_system_no_license_key', {  })
         elif packet_class == 1:
             if packet_command == 0:
                 key, value_len = struct.unpack('<HB', rx_payload[:3])
-                callbacks.ble_evt_flash_ps_key(key=key, value=rx_payload[3:])
+                callbacks.ble_evt('ble_evt_flash_ps_key', key=key, value=rx_payload[3:])
         elif packet_class == 2:
             if packet_command == 0:
                 connection, reason, handle, offset, value_len = struct.unpack('<BBHHB', rx_payload[:7])
-                callbacks.ble_evt_attributes_value(connection=connection, reason=reason, handle=handle, offset=offset, value=rx_payload[7:])
+                callbacks.ble_evt('ble_evt_attributes_value', connection=connection, reason=reason, handle=handle, offset=offset, value=rx_payload[7:])
             elif packet_command == 1:
                 connection, handle, offset, maxsize = struct.unpack('<BHHB', rx_payload[:6])
-                callbacks.ble_evt_attributes_user_read_request(connection=connection, handle=handle, offset=offset, maxsize=maxsize)
+                callbacks.ble_evt('ble_evt_attributes_user_read_request', connection=connection, handle=handle, offset=offset, maxsize=maxsize)
             elif packet_command == 2:
                 handle, flags = struct.unpack('<HB', rx_payload[:3])
-                callbacks.ble_evt_attributes_status(handle=handle, flags=flags)
+                callbacks.ble_evt('ble_evt_attributes_status', handle=handle, flags=flags)
         elif packet_class == 3:
             if packet_command == 0:
                 connection, flags, address, address_type, conn_interval, timeout, latency, bonding = struct.unpack('<BB6sBHHHB', rx_payload[:16])
-                callbacks.ble_evt_connection_status(connection=connection, flags=flags, address=address, address_type=address_type, conn_interval=conn_interval, timeout=timeout, latency=latency, bonding=bonding)
+                callbacks.ble_evt('ble_evt_connection_status', connection=connection, flags=flags, address=address, address_type=address_type, conn_interval=conn_interval, timeout=timeout, latency=latency, bonding=bonding)
             elif packet_command == 1:
                 connection, vers_nr, comp_id, sub_vers_nr = struct.unpack('<BBHH', rx_payload[:6])
-                callbacks.ble_evt_connection_version_ind(connection=connection, vers_nr=vers_nr, comp_id=comp_id, sub_vers_nr=sub_vers_nr)
+                callbacks.ble_evt('ble_evt_connection_version_ind', connection=connection, vers_nr=vers_nr, comp_id=comp_id, sub_vers_nr=sub_vers_nr)
             elif packet_command == 2:
                 connection, features_len = struct.unpack('<BB', rx_payload[:2])
                 features_data = [ord(b) for b in rx_payload[2:]]
-                callbacks.ble_evt_connection_feature_ind(connection=connection, features=features_data)
+                callbacks.ble_evt('ble_evt_connection_feature_ind', connection=connection, features=features_data)
             elif packet_command == 3:
                 connection, data_len = struct.unpack('<BB', rx_payload[:2])
-                callbacks.ble_evt_connection_raw_rx(connection=connection, data=rx_payload[2:])
+                callbacks.ble_evt('ble_evt_connection_raw_rx', connection=connection, data=rx_payload[2:])
             elif packet_command == 4:
                 connection, reason = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_evt_connection_disconnected(connection=connection, reason=reason)
+                callbacks.ble_evt('ble_evt_connection_disconnected', connection=connection, reason=reason)
         elif packet_class == 4:
             if packet_command == 0:
                 connection, attrhandle = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_evt_attclient_indicated(connection=connection, attrhandle=attrhandle)
+                callbacks.ble_evt('ble_evt_attclient_indicated', connection=connection, attrhandle=attrhandle)
             elif packet_command == 1:
                 connection, result, chrhandle = struct.unpack('<BHH', rx_payload[:5])
-                callbacks.ble_evt_attclient_procedure_completed(connection=connection, result=result, chrhandle=chrhandle)
+                callbacks.ble_evt('ble_evt_attclient_procedure_completed', connection=connection, result=result, chrhandle=chrhandle)
             elif packet_command == 2:
                 connection, start, end, uuid_len = struct.unpack('<BHHB', rx_payload[:6])
-                callbacks.ble_evt_attclient_group_found(connection=connection, start=start, end=end, uuid=rx_payload[6:])
+                callbacks.ble_evt('ble_evt_attclient_group_found', connection=connection, start=start, end=end, uuid=rx_payload[6:])
             elif packet_command == 3:
                 connection, chrdecl, value, properties, uuid_len = struct.unpack('<BHHBB', rx_payload[:7])
-                callbacks.ble_evt_attclient_attribute_found(connection=connection, chrdecl=chrdecl, value=value, properties=properties, uuid=rx_payload[7:])
+                callbacks.ble_evt('ble_evt_attclient_attribute_found', connection=connection, chrdecl=chrdecl, value=value, properties=properties, uuid=rx_payload[7:])
             elif packet_command == 4:
                 connection, chrhandle, uuid_len = struct.unpack('<BHB', rx_payload[:4])
-                callbacks.ble_evt_attclient_find_information_found(connection=connection, chrhandle=chrhandle, uuid=rx_payload[4:])
+                callbacks.ble_evt('ble_evt_attclient_find_information_found', connection=connection, chrhandle=chrhandle, uuid=rx_payload[4:])
             elif packet_command == 5:
                 connection, atthandle, type, value_len = struct.unpack('<BHBB', rx_payload[:5])
-                callbacks.ble_evt_attclient_attribute_value(connection=connection, atthandle=atthandle, type=type, value=rx_payload[5:])
+                callbacks.ble_evt('ble_evt_attclient_attribute_value', connection=connection, atthandle=atthandle, type=type, value=rx_payload[5:])
             elif packet_command == 6:
                 connection, handles_len = struct.unpack('<BB', rx_payload[:2])
-                callbacks.ble_evt_attclient_read_multiple_response(connection=connection, handles=rx_payload[2:])
+                callbacks.ble_evt('ble_evt_attclient_read_multiple_response', connection=connection, handles=rx_payload[2:])
         elif packet_class == 5:
             if packet_command == 0:
                 handle, packet, data_len = struct.unpack('<BBB', rx_payload[:3])
-                callbacks.ble_evt_sm_smp_data(handle=handle, packet=packet, data=rx_payload[3:])
+                callbacks.ble_evt('ble_evt_sm_smp_data', handle=handle, packet=packet, data=rx_payload[3:])
             elif packet_command == 1:
                 handle, result = struct.unpack('<BH', rx_payload[:3])
-                callbacks.ble_evt_sm_bonding_fail(handle=handle, result=result)
+                callbacks.ble_evt('ble_evt_sm_bonding_fail', handle=handle, result=result)
             elif packet_command == 2:
                 handle, passkey = struct.unpack('<BI', rx_payload[:5])
-                callbacks.ble_evt_sm_passkey_display(handle=handle, passkey=passkey)
+                callbacks.ble_evt('ble_evt_sm_passkey_display', handle=handle, passkey=passkey)
             elif packet_command == 3:
                 handle = struct.unpack('<B', rx_payload[:1])[0]
-                callbacks.ble_evt_sm_passkey_request(handle=handle)
+                callbacks.ble_evt('ble_evt_sm_passkey_request', handle=handle)
             elif packet_command == 4:
                 bond, keysize, mitm, keys = struct.unpack('<BBBB', rx_payload[:4])
-                callbacks.ble_evt_sm_bond_status(bond=bond, keysize=keysize, mitm=mitm, keys=keys)
+                callbacks.ble_evt('ble_evt_sm_bond_status', bond=bond, keysize=keysize, mitm=mitm, keys=keys)
         elif packet_class == 6:
             if packet_command == 0:
                 rssi, packet_type, sender, address_type, bond, data_len = struct.unpack('<bB6sBBB', rx_payload[:11])
-                callbacks.ble_evt_gap_scan_response(rssi=rssi, packet_type=packet_type, sender=sender,
+                callbacks.ble_evt('ble_evt_gap_scan_response', rssi=rssi, packet_type=packet_type, sender=sender,
                                                     address_type=address_type, bond=bond, data=rx_payload[11:] )
             elif packet_command == 1:
                 discover, connect = struct.unpack('<BB', rx_payload[:2])
-                callbacks.ble_evt_gap_mode_changed(discover=discover, connect=connect)
+                callbacks.ble_evt('ble_evt_gap_mode_changed', discover=discover, connect=connect)
         elif packet_class == 7:
             if packet_command == 0:
                 timestamp, port, irq, state = struct.unpack('<IBBB', rx_payload[:7])
-                callbacks.ble_evt_hardware_io_port_status(timestamp=timestamp, port=port, irq=irq, state=state)
+                callbacks.ble_evt('ble_evt_hardware_io_port_status', timestamp=timestamp, port=port, irq=irq, state=state)
             elif packet_command == 1:
                 handle = struct.unpack('<B', rx_payload[:1])[0]
-                callbacks.ble_evt_hardware_soft_timer(handle=handle)
+                callbacks.ble_evt('ble_evt_hardware_soft_timer', handle=handle)
             elif packet_command == 2:
                 input, value = struct.unpack('<Bh', rx_payload[:3])
-                callbacks.ble_evt_hardware_adc_result(input=input, value=value)
+                callbacks.ble_evt('ble_evt_hardware_adc_result', input=input, value=value)
 
-class BlueGigaCallbacks(object):
+
+class BlueGigaCallbacksBase(object):
+    def ble_rsp(self, response, **kargs):
+        callback = getattr(self, response, None)
+        if callback is None:
+            logger.warning("RSP %s %s", response, kargs)
+        else:
+            callback(**kargs)
+
+    def ble_evt(self, event, **kargs):
+        callback = getattr(self, event, None)
+        if callback is None:
+            logger.warning("EVT %s, %s", event, kargs)
+        else:
+            callback(**kargs)
+
+
+class BlueGigaCallbacks(BlueGigaCallbacksBase):
     def ble_rsp_system_reset(self):
         logger.info("RSP-System Reset")
 
