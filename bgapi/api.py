@@ -97,7 +97,7 @@ class BlueGigaAPI(object):
     def ble_cmd_system_endpoint_rx(self, endpoint, size):
         self.send_command(0, 13, struct.pack('<BB', endpoint, size))
     def ble_cmd_system_endpoint_set_watermarks(self, endpoint, rx, tx):
-        self.send_command(struct.pack('<BBB', 0, 14, endpoint, rx, tx))
+        self.send_command(0, 14, struct.pack('<BBB', endpoint, rx, tx))
     def ble_cmd_flash_ps_defrag(self):
         self.send_command(1, 0)
     def ble_cmd_flash_ps_dump(self):
