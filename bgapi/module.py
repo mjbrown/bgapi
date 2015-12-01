@@ -117,12 +117,14 @@ class ProcedureManager(object):
 
     def start_procedure(self, type):
         self.type = type
+        self.procedure_result = 0x0000
         self._event.clear()
 
     def wait_for_procedure(self, timeout=3):
         return self._event.wait(timeout)
 
-    def procedure_complete(self, type):
+    def procedure_complete(self, type, result=0x0000):
+        self.procedure_result = result
         if self.type == type:
             self._event.set()
 
@@ -143,6 +145,10 @@ class BLEConnection(ProcedureManager):
         self.handle_uuid = {}
         self.uuid_handle = {}
         self.handle_value = {}
+        self.attrclient_value_cb = {}
+
+    def assign_attrclient_value_callback(self, handle, callback):
+        self.attrclient_value_cb[handle] = callback
 
     def get_connected_address(self):
         return self.address
@@ -182,6 +188,8 @@ class BLEConnection(ProcedureManager):
                         break
         else:
             raise BlueGigaModuleException("Attribute Value for Handle %d received with unknown UUID!" % (handle))
+        if handle in self.attrclient_value_cb:
+            self.attrclient_value_cb[handle](value)
 
     def read_by_group_type(self, type, timeout=3):
         self.start_procedure(PROCEDURE)
@@ -216,6 +224,21 @@ class BLEConnection(ProcedureManager):
         self._api.ble_cmd_attclient_attribute_write(self.handle, handle, value)
         if not self.wait_for_procedure(timeout=timeout):
             raise BlueGigaModuleException("Write did not complete before timeout! Connection:%d - Handle:%d" % self.handle, handle)
+
+    def wr_noresp_by_uuid(self, uuid, value, timeout=3):
+        for handle in self.uuid_handle[uuid]:
+            self.wr_noresp_by_handle(handle, value, timeout)
+
+    def wr_noresp_by_handle(self, handle, value, timeout=3, attempts=1):
+        for i in range(attempts):
+            self.start_procedure(PROCEDURE)
+            self._api.ble_cmd_attclient_write_command(self.handle, handle, value)
+            if not self.wait_for_procedure(timeout=timeout):
+                raise BlueGigaModuleException("Write without response did not complete before timeout! Connection:%d - Handle:%d" % (self.handle, handle))
+            if self.procedure_result != 0x0000:
+                time.sleep(self.interval * 0.00125) # Sleep for a connection interval
+            else:
+                break
 
     def read_long_by_uuid(self, uuid, timeout=3):
         for handle in self.uuid_handle[uuid]:
@@ -359,14 +382,22 @@ class BlueGigaModule(BlueGigaCallbacks, ProcedureManager):
     def ble_rsp_connection_disconnect(self, connection, result):
         super(BlueGigaModule, self).ble_rsp_connection_disconnect(connection, result)
         if result == 0x0186: # Not Connected
-            self.procedure_complete(DISCONNECT)
+            self.procedure_complete(DISCONNECT, result=result)
 
     def ble_evt_connection_disconnected(self, connection, reason):
         super(BlueGigaModule, self).ble_evt_connection_disconnected(connection, reason)
-        self.procedure_complete(DISCONNECT)
+        self.procedure_complete(DISCONNECT, result=reason)
 
 
 class BlueGigaClient(BlueGigaModule):
+    def connect_by_adv_data(self, adv_data, scan_timeout=3, conn_interval_min=0x20, conn_interval_max=0x30, connection_timeout=100, latency=0):
+        responses = self.scan_all(timeout=scan_timeout)
+        for resp in responses:
+            if adv_data in resp.data:
+                return self.connect(resp, scan_timeout, conn_interval_min, conn_interval_max, connection_timeout, latency)
+        else:
+            raise BlueGigaModuleException("%s not found in BLE scan!" % (adv_data))
+
     def scan_limited(self, timeout=20):
         return self._scan(mode=gap_discover_mode['gap_discover_limited'], timeout=timeout)
 
@@ -398,6 +429,11 @@ class BlueGigaClient(BlueGigaModule):
         self._api.ble_cmd_gap_end_procedure()
         return self.scan_responses
 
+    def ble_rsp_attclient_write_command(self, connection, result):
+        super(BlueGigaClient, self).ble_rsp_attclient_write_command(connection=connection, result=result)
+        self.procedure_complete(PROCEDURE, result=result)
+        self.connections[connection].procedure_complete(PROCEDURE, result=result)
+
     #----------------  Events triggered by incoming data ------------------#
 
     def ble_evt_gap_scan_response(self, rssi, packet_type, sender, address_type, bond, data):
@@ -412,8 +448,9 @@ class BlueGigaClient(BlueGigaModule):
 
     def ble_evt_attclient_attribute_value(self, connection, atthandle, type, value):
         super(BlueGigaModule, self).ble_evt_attclient_attribute_value(connection, atthandle, type, value)
-        self.connections[connection].update_handle(atthandle, value)
-        self.connections[connection].procedure_complete(READ_ATTRIBUTE)
+        if connection in self.connections:
+            self.connections[connection].update_handle(atthandle, value)
+            self.connections[connection].procedure_complete(READ_ATTRIBUTE)
 
     def ble_evt_attclient_group_found(self, connection, start, end, uuid):
         super(BlueGigaModule, self).ble_evt_attclient_group_found(connection, start, end, uuid)
@@ -421,9 +458,9 @@ class BlueGigaClient(BlueGigaModule):
 
     def ble_evt_attclient_procedure_completed(self, connection, result, chrhandle):
         super(BlueGigaModule, self).ble_evt_attclient_procedure_completed(connection, result, chrhandle)
-        self.procedure_complete(PROCEDURE)
-        self.connections[connection].procedure_complete(PROCEDURE)
-        self.connections[connection].procedure_complete(READ_ATTRIBUTE) # When the attribute read fails
+        self.procedure_complete(PROCEDURE, result=result)
+        self.connections[connection].procedure_complete(PROCEDURE, result=result)
+        self.connections[connection].procedure_complete(READ_ATTRIBUTE, result=result) # When the attribute read fails
 
 
 class BlueGigaServer(BlueGigaModule):
