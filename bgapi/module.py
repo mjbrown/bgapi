@@ -39,9 +39,8 @@ class BLEScanResponse(object):
             length = ord(remaining[0])
             gap_data = remaining[1:length+1]
 
-            adv_seg={"UUID": "", "Data": ""}
-            adv_seg["UUID"] = self.get_uuid_type_string(gap_data[0])
-
+            adv_seg={"Type": "", "Data": ""}
+            adv_seg["Type"] = self.get_uuid_type_string(gap_data[0])
             adv_seg["Data"] = gap_data[1:]
             self.adv_payload.append( adv_seg)
             #print "GAP Data: %s" % ("".join(["\\x%02x" % ord(i) for i in gap_data]))
