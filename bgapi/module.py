@@ -28,6 +28,7 @@ class BLEScanResponse(object):
         self.bond = bond
         self.data = data
         self.services = []
+        self.adv_payload = []
 
     def get_sender_address(self):
         return self.sender
@@ -37,8 +38,15 @@ class BLEScanResponse(object):
         while len(remaining) > 0:
             length = ord(remaining[0])
             gap_data = remaining[1:length+1]
+
+            adv_seg={"Type": "", "Data": ""}
+            adv_seg["Type"] = self.get_ad_type_string(gap_data[0])
+            adv_seg["Data"] = gap_data[1:]
+            self.adv_payload.append( adv_seg)
             #print "GAP Data: %s" % ("".join(["\\x%02x" % ord(i) for i in gap_data]))
             remaining = remaining[length+1:]
+
+
             if gap_data[0] == 0x1:  # Flags
                 pass
             elif gap_data[0] == "\x02" or gap_data[0] == "\x03":  # Incomplete/Complete list of 16-bit UUIDs
@@ -54,6 +62,43 @@ class BLEScanResponse(object):
     def get_services(self):
         self.parse_advertisement_data()
         return self.services
+
+    def get_ad_type_string(self, type):
+        type_ord = ord(type)
+        return {
+            0x01:"BLE_GAP_AD_TYPE_FLAGS",
+            0x02:"BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_MORE_AVAILABLE",
+            0x03:"BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_COMPLETE",
+            0x04:"BLE_GAP_AD_TYPE_32BIT_SERVICE_UUID_MORE_AVAILABLE",
+            0x05:"BLE_GAP_AD_TYPE_32BIT_SERVICE_UUID_COMPLETE",
+            0x06:"BLE_GAP_AD_TYPE_128BIT_SERVICE_UUID_MORE_AVAILABLE",
+            0x07:"BLE_GAP_AD_TYPE_128BIT_SERVICE_UUID_COMPLETE",
+            0x08:"BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME",
+            0x09:"BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME",
+            0x0A:"BLE_GAP_AD_TYPE_TX_POWER_LEVEL",
+            0x0D:"BLE_GAP_AD_TYPE_CLASS_OF_DEVICE",
+            0x0E:"BLE_GAP_AD_TYPE_SIMPLE_PAIRING_HASH_C",
+            0x0F:"BLE_GAP_AD_TYPE_SIMPLE_PAIRING_RANDOMIZER_R",
+            0x10:"BLE_GAP_AD_TYPE_SECURITY_MANAGER_TK_VALUE",
+            0x11:"BLE_GAP_AD_TYPE_SECURITY_MANAGER_OOB_FLAGS",
+            0x12:"BLE_GAP_AD_TYPE_SLAVE_CONNECTION_INTERVAL_RANGE",
+            0x14:"BLE_GAP_AD_TYPE_SOLICITED_SERVICE_UUIDS_16BIT",
+            0x15:"BLE_GAP_AD_TYPE_SOLICITED_SERVICE_UUIDS_128BIT",
+            0x16:"BLE_GAP_AD_TYPE_SERVICE_DATA",
+            0x17:"BLE_GAP_AD_TYPE_PUBLIC_TARGET_ADDRESS",
+            0x18:"BLE_GAP_AD_TYPE_RANDOM_TARGET_ADDRESS",
+            0x19:"BLE_GAP_AD_TYPE_APPEARANCE",
+            0x1A:"BLE_GAP_AD_TYPE_ADVERTISING_INTERVAL",
+            0x1B:"BLE_GAP_AD_TYPE_LE_BLUETOOTH_DEVICE_ADDRESS",
+            0x1C:"BLE_GAP_AD_TYPE_LE_ROLE",
+            0x1D:"BLE_GAP_AD_TYPE_SIMPLE_PAIRING_HASH_C256",
+            0x1E:"BLE_GAP_AD_TYPE_SIMPLE_PAIRING_RANDOMIZER_R256",
+            0x20:"BLE_GAP_AD_TYPE_SERVICE_DATA_32BIT_UUID",
+            0x21:"BLE_GAP_AD_TYPE_SERVICE_DATA_128BIT_UUID",
+            0x3D:"BLE_GAP_AD_TYPE_3D_INFORMATION_DATA",
+            0xFF:"BLE_GAP_AD_TYPE_MANUFACTURER_SPECIFIC_DATA"
+        }[type_ord]
+
 
 
 class GATTCharacteristicDescriptor(object):
