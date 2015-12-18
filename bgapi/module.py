@@ -452,6 +452,12 @@ class BlueGigaClient(BlueGigaModule):
     def scan_all(self, timeout=20):
         return self._scan(mode=gap_discover_mode['gap_discover_observation'], timeout=timeout)
 
+    def active_scan(self, scan_interval = 0x4B, scan_window = 0x32):
+        return self._api.ble_cmd_gap_set_scan_parameters(scan_interval, scan_window, 1)
+
+    def disable_scan(self, scan_interval = 0x4B, scan_window = 0x32):
+        return self._api.ble_cmd_gap_set_scan_parameters(scan_interval, scan_window, 0)
+
     def connect(self, target, timeout=5, conn_interval_min=0x20, conn_interval_max=0x30, connection_timeout=100, latency=0):
         self.start_procedure(CONNECT)
         self._api.ble_cmd_gap_connect_direct(address=target.sender,
