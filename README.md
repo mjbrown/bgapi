@@ -23,7 +23,3 @@ Example Code
 The test folder demonstrates high level Bluetooth Smart operations.  It provides examples of Apple's iBeacon and
 Google's prototype Physical Web.  Testing of this library is limited to what you see in these examples.  Many BGAPI
 commands cannot be tested, especially hardware operations like GPIO and I2C.  Two BLE112 devices are needed for all tests.
-
-In Progress
-====================
-1. Indicate, notify, and other examples using characteristic descriptors.
