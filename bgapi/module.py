@@ -497,8 +497,6 @@ class BlueGigaClient(BlueGigaModule):
 
     def connect(self, target, timeout=5, conn_interval_min=0x20, conn_interval_max=0x30, connection_timeout=100, latency=0):
         self.start_procedure(CONNECT)
-        print target.sender, type(target.sender)
-        print target.address_type, type(target.address_type)
         self._api.ble_cmd_gap_connect_direct(address=target.sender,
                                              addr_type=target.address_type,
                                              conn_interval_min=conn_interval_min,
