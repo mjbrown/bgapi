@@ -39,11 +39,13 @@ class BLEScanResponse(object):
             length = ord(remaining[0])
             gap_data = remaining[1:length+1]
 
-            adv_seg = dict()
-            adv_seg["AD Type"] = self.get_ad_type_string(gap_data[0])
+            adv_seg={"Type": "", "Data": ""}
+            adv_seg["Type"] = self.get_ad_type_string(gap_data[0])
             adv_seg["Data"] = gap_data[1:]
             self.adv_payload.append( adv_seg)
+            #print "GAP Data: %s" % ("".join(["\\x%02x" % ord(i) for i in gap_data]))
             remaining = remaining[length+1:]
+
 
             if gap_data[0] == 0x1:  # Flags
                 pass
@@ -64,45 +66,45 @@ class BLEScanResponse(object):
     def get_ad_type_string(self, type):
         type_ord = ord(type)
         return {
-            0x01: "BLE_GAP_AD_TYPE_FLAGS",
-            0x02: "BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_MORE_AVAILABLE",
-            0x03: "BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_COMPLETE",
-            0x04: "BLE_GAP_AD_TYPE_32BIT_SERVICE_UUID_MORE_AVAILABLE",
-            0x05: "BLE_GAP_AD_TYPE_32BIT_SERVICE_UUID_COMPLETE",
-            0x06: "BLE_GAP_AD_TYPE_128BIT_SERVICE_UUID_MORE_AVAILABLE",
-            0x07: "BLE_GAP_AD_TYPE_128BIT_SERVICE_UUID_COMPLETE",
-            0x08: "BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME",
-            0x09: "BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME",
-            0x0A: "BLE_GAP_AD_TYPE_TX_POWER_LEVEL",
-            0x0D: "BLE_GAP_AD_TYPE_CLASS_OF_DEVICE",
-            0x0E: "BLE_GAP_AD_TYPE_SIMPLE_PAIRING_HASH_C",
-            0x0F: "BLE_GAP_AD_TYPE_SIMPLE_PAIRING_RANDOMIZER_R",
-            0x10: "BLE_GAP_AD_TYPE_SECURITY_MANAGER_TK_VALUE",
-            0x11: "BLE_GAP_AD_TYPE_SECURITY_MANAGER_OOB_FLAGS",
-            0x12: "BLE_GAP_AD_TYPE_SLAVE_CONNECTION_INTERVAL_RANGE",
-            0x14: "BLE_GAP_AD_TYPE_SOLICITED_SERVICE_UUIDS_16BIT",
-            0x15: "BLE_GAP_AD_TYPE_SOLICITED_SERVICE_UUIDS_128BIT",
-            0x16: "BLE_GAP_AD_TYPE_SERVICE_DATA",
-            0x17: "BLE_GAP_AD_TYPE_PUBLIC_TARGET_ADDRESS",
-            0x18: "BLE_GAP_AD_TYPE_RANDOM_TARGET_ADDRESS",
-            0x19: "BLE_GAP_AD_TYPE_APPEARANCE",
-            0x1A: "BLE_GAP_AD_TYPE_ADVERTISING_INTERVAL",
-            0x1B: "BLE_GAP_AD_TYPE_LE_BLUETOOTH_DEVICE_ADDRESS",
-            0x1C: "BLE_GAP_AD_TYPE_LE_ROLE",
-            0x1D: "BLE_GAP_AD_TYPE_SIMPLE_PAIRING_HASH_C256",
-            0x1E: "BLE_GAP_AD_TYPE_SIMPLE_PAIRING_RANDOMIZER_R256",
-            0x20: "BLE_GAP_AD_TYPE_SERVICE_DATA_32BIT_UUID",
-            0x21: "BLE_GAP_AD_TYPE_SERVICE_DATA_128BIT_UUID",
-            0x3D: "BLE_GAP_AD_TYPE_3D_INFORMATION_DATA",
-            0xFF: "BLE_GAP_AD_TYPE_MANUFACTURER_SPECIFIC_DATA"
+            0x01:"BLE_GAP_AD_TYPE_FLAGS",
+            0x02:"BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_MORE_AVAILABLE",
+            0x03:"BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_COMPLETE",
+            0x04:"BLE_GAP_AD_TYPE_32BIT_SERVICE_UUID_MORE_AVAILABLE",
+            0x05:"BLE_GAP_AD_TYPE_32BIT_SERVICE_UUID_COMPLETE",
+            0x06:"BLE_GAP_AD_TYPE_128BIT_SERVICE_UUID_MORE_AVAILABLE",
+            0x07:"BLE_GAP_AD_TYPE_128BIT_SERVICE_UUID_COMPLETE",
+            0x08:"BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME",
+            0x09:"BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME",
+            0x0A:"BLE_GAP_AD_TYPE_TX_POWER_LEVEL",
+            0x0D:"BLE_GAP_AD_TYPE_CLASS_OF_DEVICE",
+            0x0E:"BLE_GAP_AD_TYPE_SIMPLE_PAIRING_HASH_C",
+            0x0F:"BLE_GAP_AD_TYPE_SIMPLE_PAIRING_RANDOMIZER_R",
+            0x10:"BLE_GAP_AD_TYPE_SECURITY_MANAGER_TK_VALUE",
+            0x11:"BLE_GAP_AD_TYPE_SECURITY_MANAGER_OOB_FLAGS",
+            0x12:"BLE_GAP_AD_TYPE_SLAVE_CONNECTION_INTERVAL_RANGE",
+            0x14:"BLE_GAP_AD_TYPE_SOLICITED_SERVICE_UUIDS_16BIT",
+            0x15:"BLE_GAP_AD_TYPE_SOLICITED_SERVICE_UUIDS_128BIT",
+            0x16:"BLE_GAP_AD_TYPE_SERVICE_DATA",
+            0x17:"BLE_GAP_AD_TYPE_PUBLIC_TARGET_ADDRESS",
+            0x18:"BLE_GAP_AD_TYPE_RANDOM_TARGET_ADDRESS",
+            0x19:"BLE_GAP_AD_TYPE_APPEARANCE",
+            0x1A:"BLE_GAP_AD_TYPE_ADVERTISING_INTERVAL",
+            0x1B:"BLE_GAP_AD_TYPE_LE_BLUETOOTH_DEVICE_ADDRESS",
+            0x1C:"BLE_GAP_AD_TYPE_LE_ROLE",
+            0x1D:"BLE_GAP_AD_TYPE_SIMPLE_PAIRING_HASH_C256",
+            0x1E:"BLE_GAP_AD_TYPE_SIMPLE_PAIRING_RANDOMIZER_R256",
+            0x20:"BLE_GAP_AD_TYPE_SERVICE_DATA_32BIT_UUID",
+            0x21:"BLE_GAP_AD_TYPE_SERVICE_DATA_128BIT_UUID",
+            0x3D:"BLE_GAP_AD_TYPE_3D_INFORMATION_DATA",
+            0xFF:"BLE_GAP_AD_TYPE_MANUFACTURER_SPECIFIC_DATA"
         }[type_ord]
+
 
 
 class GATTCharacteristicDescriptor(object):
     def __init__(self, handle, value):
         self.handle = handle
         self.value = value
-
 
 class GATTService(object):
     PRIMARY_SERVICE_UUID = "\x00\x28" # [0x00, 0x28]
@@ -112,12 +114,10 @@ class GATTService(object):
         self.end_handle = end_handle
         self.uuid = uuid
 
-
 class GATTCharacteristic(object):
     CHARACTERISTIC_UUID = "\x03\x28"
     CLIENT_CHARACTERISTIC_CONFIG = "\x02\x29"
     USER_DESCRIPTION = "\x01\x29"
-
     def __init__(self, handle, properties):
         self.handle = handle
         self.properties, self.value_handle = struct.unpack("<BH", properties[:3])
@@ -155,7 +155,6 @@ class GATTCharacteristic(object):
         else:
             return self.descriptors[uuid]
 
-
 class ProcedureManager(object):
     def __init__(self):
         self._event = Event()
@@ -188,9 +187,10 @@ class BLEConnection(ProcedureManager):
         self.bond_handle = bonding
         self.services = {}
         self.characteristics = {}
+        self.handle_uuid = {}
+        self.uuid_handle = {}
         self.handle_value = {}
         self.attrclient_value_cb = {}
-        self.gatt_database = {}
 
     def assign_attrclient_value_callback(self, handle, callback):
         self.attrclient_value_cb[handle] = callback
@@ -207,56 +207,29 @@ class BLEConnection(ProcedureManager):
     def get_characteristics(self):
         return [j for i, j in sorted(self.characteristics.items(), key=operator.itemgetter(0))]
 
-    def get_gatt_database(self):
-        return self.gatt_database
-
     def update_uuid(self, handle, uuid):
-        uuid_hex_val = 0
-        for i in uuid[::-1]:
-            uuid_hex_val <<= 8
-            uuid_hex_val |= ord(i)
-        self.gatt_database[handle] = uuid_hex_val
+        self.handle_uuid[handle] = uuid
+        if uuid in self.uuid_handle:
+            self.uuid_handle[uuid] += [handle]
+        else:
+            self.uuid_handle[uuid] = [handle]
 
     def get_handles_by_uuid(self, uuid):
-        return [handle_ for handle_, uuid_ in self.gatt_database.iteritems() if uuid_ == uuid]
+        if uuid in self.uuid_handle:
+            return self.uuid_handle[uuid]
 
     def get_uuid_by_handle(self, handle):
-        return [uuid_ for handle_, uuid_ in self.gatt_database.iteritems() if handle_ == handle]
-
-    def get_uuid_name(self, uuid):
-        return {
-            0x2800: "Primary Service Declaration",
-            0x2801: "Secondary Service Declaration",
-            0x2802: "Include Declaration",
-            0x2803: "Characteristic Declaration",
-            0x2900: "Characteristic Extended Properties",
-            0x2901: "Characteristic User Description Descriptor",
-            0x2902: "Client Characteristic Configuration Descriptor",
-            0x2903: "Server Characteristic Configuration Descriptor",
-            0x2904: "Characteristic Format Descriptor",
-            0x2905: "Characteristic Aggregate Format Descriptor",
-            0x2A00: "Device Name",
-            0x2A01: "GAP Appearance",
-            0x2A02: "GAP Privacy Peripheral Flag",
-            0x2A03: "Reconnection Address",
-            0x2A04: "Peripheral Preferred Connection Parameters",
-            0x2A05: "GATT Service Changed",
-            0x2A19: "Battery Level",
-            0x2A23: "System ID",
-            0x2A24: "Model Number String",
-            0x2A25: "Serial Number String",
-            0x2A26: "Firmware Number String",
-            0x2A29: "Manufacturer Name String",
-        }.get(uuid, "Unidentified UUID")
+        if handle in self.handle_uuid:
+            return self.handle_uuid[handle]
 
     def update_handle(self, handle, value):
-        if handle in self.gatt_database:
-            if self.gatt_database[handle] == GATTCharacteristic.CHARACTERISTIC_UUID:
+        if handle in self.handle_uuid:
+            if self.handle_uuid[handle] == GATTCharacteristic.CHARACTERISTIC_UUID:
                 self.characteristics[handle] = GATTCharacteristic(handle, value)
             else:
                 for characteristic in self.get_characteristics()[::-1]:
                     if characteristic.handle < handle:
-                        characteristic.add_descriptor(self.gatt_database[handle], handle, value)
+                        characteristic.add_descriptor(self.handle_uuid[handle], handle, value)
                         break
         else:
             raise BlueGigaModuleException("Attribute Value for Handle %d received with unknown UUID!" % (handle))
@@ -281,15 +254,6 @@ class BLEConnection(ProcedureManager):
         if not self.wait_for_procedure(timeout=timeout):
             raise BlueGigaModuleException("Find Information did not complete before timeout!")
 
-    def walk_gatt(self,timeout=5):
-        start_handle = 0;
-        while len(self.gatt_database) == 0:
-            self.start_procedure(PROCEDURE)
-            self._api.ble_cmd_attclient_find_information(self.handle, start_handle, 0xFFFF)
-            if not self.wait_for_procedure(timeout=timeout):
-                raise BlueGigaModuleException("walk gatt did not complete before timeout!")
-            start_handle += 1
-
     def read_by_handle(self, handle, timeout=3):
         self.start_procedure(READ_ATTRIBUTE)
         self._api.ble_cmd_attclient_read_by_handle(self.handle, handle)
@@ -297,7 +261,7 @@ class BLEConnection(ProcedureManager):
             raise BlueGigaModuleException("Read Attribute by Handle did not complete before timeout!")
 
     def write_by_uuid(self, uuid, value, timeout=3):
-        for handle in self.get_handles_by_uuid(uuid):
+        for handle in self.uuid_handle[uuid]:
             self.write_by_handle(handle, value, timeout)
 
     def write_by_handle(self, handle, value, timeout=3):
@@ -307,7 +271,7 @@ class BLEConnection(ProcedureManager):
             raise BlueGigaModuleException("Write did not complete before timeout! Connection:%d - Handle:%d" % self.handle, handle)
 
     def wr_noresp_by_uuid(self, uuid, value, timeout=3):
-        for handle in self.get_handles_by_uuid(uuid):
+        for handle in self.uuid_handle[uuid]:
             self.wr_noresp_by_handle(handle, value, timeout)
 
     def wr_noresp_by_handle(self, handle, value, timeout=3, attempts=1):
@@ -319,12 +283,11 @@ class BLEConnection(ProcedureManager):
             if self.procedure_result != 0x0000:
                 time.sleep(self.interval * 0.00125) # Sleep for a connection interval
             else:
-                return True
-        return False
+                break
 
     def read_long_by_uuid(self, uuid, timeout=3):
-        for handle in self.get_handles_by_uuid(uuid):
-            self.read_long_by_handle(handle)
+        for handle in self.uuid_handle[uuid]:
+            self.read_long_by_handle(self.uuid_handle[uuid])
 
     def read_long_by_handle(self, handle, timeout=3):
         self.start_procedure(PROCEDURE)
@@ -333,7 +296,7 @@ class BLEConnection(ProcedureManager):
             raise BlueGigaModuleException("Long Read did not complete before timeout! Connection:%d - Handle:%d" % self.handle, handle)
 
     def reliable_write_by_uuid(self, uuid, value, offset=0, timeout=3):
-        for handle in self.get_handles_by_uuid(uuid):
+        for handle in self.uuid_handle[uuid]:
             self.reliable_write_by_handle(handle, value, offset, timeout)
 
     def reliable_write_by_handle(self, handle, value, offset=0, timeout=3):
@@ -505,18 +468,6 @@ class BlueGigaClient(BlueGigaModule):
                                              latency=latency)
         if not self.wait_for_procedure(timeout=timeout):
             raise BlueGigaModuleException("Connection attempt unsuccessful! (%s)" % target.get_sender_address())
-        return self.most_recent_connection
-
-    def connect_by_address(self, address, address_type=1, timeout=5, conn_interval_min=0x20, conn_interval_max=0x30, connection_timeout=100, latency=0):
-        self.start_procedure(CONNECT)
-        self._api.ble_cmd_gap_connect_direct(address=address,
-                                             addr_type=address_type,
-                                             conn_interval_min=conn_interval_min,
-                                             conn_interval_max=conn_interval_max,
-                                             timeout=connection_timeout,
-                                             latency=latency)
-        if not self.wait_for_procedure(timeout=timeout):
-            raise BlueGigaModuleException("Connection attempt to bluetooth address unsuccessful! (%s)" % address)
         return self.most_recent_connection
 
     def _scan(self, mode, timeout):
