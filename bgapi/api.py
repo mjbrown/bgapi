@@ -31,7 +31,7 @@ class BlueGigaAPI(object):
     def poll_serial(self, max_read_len=MAX_BGAPI_PACKET_SIZE):
         self.rx_buffer += self._serial.read(min(self._packet_size - len(self.rx_buffer), max_read_len))
         while len(self.rx_buffer) >= self._packet_size:
-            self._packet_size = 4 + (ord(self.rx_buffer[0]) & 0x07)*256 + ord(self.rx_buffer[1])
+            self._packet_size = 4 + (struct.unpack('>H', self.rx_buffer[:2])[0] & 0x7FF)
             if len(self.rx_buffer) < self._packet_size:
                 break
             packet, self.rx_buffer = self.rx_buffer[:self._packet_size], self.rx_buffer[self._packet_size:]
