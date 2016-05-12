@@ -11,6 +11,9 @@ logger = logging.getLogger("bgapi")
 
 MAX_BGAPI_PACKET_SIZE = 3 + 2048
 
+def hexlify_nice(data):
+    return ' '.join([ '%02X' % ord(b) for b in data ])
+
 class BlueGigaAPI(object):
     def __init__(self, port, callbacks=None, baud=115200, timeout=1):
         self._serial = serial.Serial(port=port, baudrate=baud, timeout=timeout)
@@ -67,7 +70,7 @@ class BlueGigaAPI(object):
         It is easier to use the ble_cmd methods, use this if you know how to compose your own BGAPI packets.
         """
         cmd = struct.pack('>HBB', len(payload), packet_class, packet_command) + payload
-        logger.debug('=>[ ' + ' '.join(['%02X' % ord(b) for b in cmd ]) + ' ]')
+        logger.debug('=>[ ' + hexlify_nice(cmd) + ' ]')
         self._serial.write(cmd)
 
     def ble_cmd_system_reset(self, boot_in_dfu):
@@ -246,7 +249,7 @@ class BlueGigaAPI(object):
         self.send_command(8, 5, struct.pack('<B' + str(len(input)) + 's', len(input), input))
 
     def parse_bgapi_packet(self, packet, callbacks=None):
-        logger.debug('<=[ ' + ' '.join(['%02X' % ord(b) for b in packet ]) + ' ]')
+        logger.debug('<=[ ' + hexlify_nice(packet) + ' ]')
         payload_length, packet_class, packet_command = struct.unpack('>HBB', packet[:4])
         message_type = payload_length >> 15
         technology_type = (payload_length >> 11) & 0xf
