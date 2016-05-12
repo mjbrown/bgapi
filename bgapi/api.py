@@ -3,6 +3,7 @@ import threading
 import struct
 import serial
 import logging
+import sys
 
 from binascii import hexlify
 from .cmd_def import RESULT_CODE, ATTRIBUTE_CHANGE_REASON, ATTRIBUTE_STATUS_FLAGS, ATTRIBUTE_VALUE_TYPE
@@ -12,7 +13,10 @@ logger = logging.getLogger("bgapi")
 MAX_BGAPI_PACKET_SIZE = 3 + 2048
 
 def hexlify_nice(data):
-    return ' '.join([ '%02X' % ord(b) for b in data ])
+    if sys.version_info >= (3, ):
+        return ' '.join([ '%02X' % b for b in data ])
+    else:
+        return ' '.join([ '%02X' % ord(b) for b in data ])
 
 class BlueGigaAPI(object):
     def __init__(self, port, callbacks=None, baud=115200, timeout=1):
