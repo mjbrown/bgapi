@@ -109,8 +109,8 @@ class GATTCharacteristicDescriptor(object):
 
 
 class GATTService(object):
-    PRIMARY_SERVICE_UUID = "\x00\x28"  # [0x00, 0x28]
-    SECONDARY_SERVICE_UUID = "\x01\x28"  # [0x01, 0x28]
+    PRIMARY_SERVICE_UUID = b"\x00\x28"  # [0x00, 0x28]
+    SECONDARY_SERVICE_UUID = b"\x01\x28"  # [0x01, 0x28]
 
     def __init__(self, start_handle, end_handle, uuid):
         self.start_handle = start_handle
@@ -119,9 +119,9 @@ class GATTService(object):
 
 
 class GATTCharacteristic(object):
-    CHARACTERISTIC_UUID = "\x03\x28"
-    CLIENT_CHARACTERISTIC_CONFIG = "\x02\x29"
-    USER_DESCRIPTION = "\x01\x29"
+    CHARACTERISTIC_UUID = b"\x03\x28"
+    CLIENT_CHARACTERISTIC_CONFIG = b"\x02\x29"
+    USER_DESCRIPTION = b"\x01\x29"
 
     def __init__(self, handle, properties):
         self.handle = handle

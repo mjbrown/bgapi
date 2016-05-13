@@ -14,7 +14,7 @@ class BlueGigaAPI(object):
         self._serial = serial.Serial(port=port, baudrate=baud, timeout=timeout)
         self._serial.flushInput()
         self._serial.flushOutput()
-        self.rx_buffer = ""
+        self.rx_buffer = b''
         self._packet_size = 4
         self._timeout = timeout
         if not callbacks:
@@ -23,7 +23,7 @@ class BlueGigaAPI(object):
             self._callbacks = callbacks
 
     def _run(self):
-        self.rx_buffer = ""
+        self.rx_buffer = b''
         while (self._continue):
             self.poll_serial()
         self._serial.close()
