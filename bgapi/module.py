@@ -46,7 +46,7 @@ class BLEScanResponse(object):
             adv_seg["Type"] = self.get_ad_type_string(gap_data[0])
             adv_seg["Data"] = gap_data[1:]
             self.adv_payload.append( adv_seg)
-            #print "GAP Data: %s" % ("".join(["\\x%02x" % ord(i) for i in gap_data]))
+            #print("GAP Data: %s" % ("".join(["\\x%02x" % ord(i) for i in gap_data])))
             remaining = remaining[length+1:]
 
             if gap_data[0] == 0x1:  # Flags

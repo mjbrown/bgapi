@@ -5,6 +5,7 @@ import logging.handlers
 
 from bgapi.module import BlueGigaModule, GATTCharacteristic, GATTService, BlueGigaClient, BlueGigaServer
 from bgapi.cmd_def import gap_discoverable_mode, gap_connectable_mode
+from __future__ import print_function
 
 CLIENT_SERIAL = "COM9"
 SERVER_SERIAL = "COM12"
@@ -64,7 +65,7 @@ def test_connect_discover(ble_client, ble_server):
         connection.read_by_handle(characteristic.value_handle)
         description = characteristic.get_descriptor_by_uuid(GATTCharacteristic.USER_DESCRIPTION)
         if description:
-            print "%s - Handle:%d - Current Value:%s" % (description.value, characteristic.handle, characteristic.value)
+            print("%s - Handle:%d - Current Value:%s" % (description.value, characteristic.handle, characteristic.value))
 
     ble_client.disconnect(connection)
 
