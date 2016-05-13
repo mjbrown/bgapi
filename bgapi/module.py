@@ -1,9 +1,10 @@
+from __future__ import absolute_import
 import time
 import struct
 import operator
 
-from api import BlueGigaAPI, BlueGigaCallbacks
-from cmd_def import gap_discoverable_mode, gap_connectable_mode, gap_discover_mode, \
+from .api import BlueGigaAPI, BlueGigaCallbacks
+from .cmd_def import gap_discoverable_mode, gap_connectable_mode, gap_discover_mode, \
     connection_status_mask, sm_io_capability
 from threading import Event
 import logging

@@ -1,10 +1,11 @@
+from __future__ import absolute_import
 import threading
 import struct
 import serial
 import logging
 
 from binascii import hexlify
-from cmd_def import RESULT_CODE, ATTRIBUTE_CHANGE_REASON, ATTRIBUTE_STATUS_FLAGS, ATTRIBUTE_VALUE_TYPE
+from .cmd_def import RESULT_CODE, ATTRIBUTE_CHANGE_REASON, ATTRIBUTE_STATUS_FLAGS, ATTRIBUTE_VALUE_TYPE
 
 logger = logging.getLogger("bgapi")
 
