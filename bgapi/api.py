@@ -210,7 +210,7 @@ class BlueGigaAPI(object):
     def ble_cmd_gap_set_adv_data(self, set_scanrsp, adv_data):
         self.send_command(6, 9, struct.pack('<BB' + str(len(adv_data)) + 's',  set_scanrsp, len(adv_data), adv_data))
     def ble_cmd_gap_set_directed_connectable_mode(self, address, addr_type):
-        self.send_command(6, 10, struct.pack('<6sB', b''.join(chr(i) for i in address), addr_type))
+        self.send_command(6, 10, struct.pack('<6BB', *address, addr_type))
     def ble_cmd_hardware_io_port_config_irq(self, port, enable_bits, falling_edge):
         self.send_command(7, 0, struct.pack('<BBB', port, enable_bits, falling_edge))
     def ble_cmd_hardware_set_soft_timer(self, time, handle, single_shot):

@@ -327,7 +327,7 @@ class BLEConnection(ProcedureManager):
         descriptor = characteristic.get_descriptor_by_uuid(GATTCharacteristic.CLIENT_CHARACTERISTIC_CONFIG)
         if not descriptor:
             raise BlueGigaModuleException("Unable to find Client Characteristic Config (must Read by Type 0x2902)")
-        config = chr((2 if indicate else 0) + (1 if notify else 0)) + "\x00"
+        config = struct.pack('BB', (2 if indicate else 0) + (1 if notify else 0), 0)
         self.write_by_handle(descriptor.handle, config, timeout=1)
 
     def request_encryption(self, bond=True, timeout=1):
@@ -588,10 +588,10 @@ class BlueGigaServer(BlueGigaModule):
                 encoded_uri = encoded_uri.replace('-', '')
                 encoded_uri = encoded_uri.decode("hex")
 
-        #advertisement_data = "\x02\x01\x06"
-        advertisement_data = "\x03\x03\xD8\xFE"
-        advertisement_data += chr(5+len(encoded_uri))
-        advertisement_data += "\x16\xD8\xFE\x00\x08"
+        #advertisement_data = b"\x02\x01\x06"
+        advertisement_data = b"\x03\x03\xD8\xFE"
+        advertisement_data += struct.pack('B', 5+len(encoded_uri))
+        advertisement_data += b"\x16\xD8\xFE\x00\x08"
         advertisement_data += encoded_uri
         self._api.ble_cmd_gap_set_adv_data(0, adv_data=advertisement_data)
 
