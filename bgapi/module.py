@@ -53,13 +53,13 @@ class BLEScanResponse(object):
 
             if gap_data[0] == 0x1:  # Flags
                 pass
-            elif gap_data[0] == "\x02" or gap_data[0] == "\x03":  # Incomplete/Complete list of 16-bit UUIDs
+            elif gap_data[0] == b"\x02" or gap_data[0] == b"\x03":  # Incomplete/Complete list of 16-bit UUIDs
                 for i in range((len(gap_data) - 1)/2):
                     self.services += [gap_data[2*i+1:2*i+3]]
-            elif gap_data[0] == "\x04" or gap_data[0] == "\x05":  # Incomplete list of 32-bit UUIDs
+            elif gap_data[0] == b"\x04" or gap_data[0] == b"\x05":  # Incomplete list of 32-bit UUIDs
                 for i in range((len(gap_data) - 1)/4):
                     self.services += [gap_data[4*i+1:4*i+5]]
-            elif gap_data[0] == "\x06" or gap_data[0] == "\x07":  # Incomplete list of 128-bit UUIDs
+            elif gap_data[0] == b"\x06" or gap_data[0] == b"\x07":  # Incomplete list of 128-bit UUIDs
                 for i in range((len(gap_data) - 1)/16):
                     self.services += [gap_data[16*i+1:16*i+17]]
 
@@ -643,6 +643,6 @@ class BlueGigaServer(BlueGigaModule):
         if handle in self.handle_values and offset > 0:
             self.handle_values[handle] = self.handle_values[handle][:offset] + value
         elif offset > 0:
-            self.handle_values[handle] = "\x00"*offset + value
+            self.handle_values[handle] = b"\x00"*offset + value
         else:
             self.handle_values[handle] = value
