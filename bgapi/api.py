@@ -247,18 +247,17 @@ class BlueGigaAPI(object):
 
     def parse_bgapi_packet(self, packet, callbacks=None):
         logger.debug('<=[ ' + ' '.join(['%02X' % ord(b) for b in packet ]) + ' ]')
-        message_type = ord(packet[0]) & 0x80
-        technology_type = ord(packet[0]) & 0x78
-        #payload_length = ord(packet[1])
-        packet_class = ord(packet[2])
-        packet_command = ord(packet[3])
+        payload_length, packet_class, packet_command = struct.unpack('>HBB', packet[:4])
+        message_type = payload_length >> 15
+        technology_type = (payload_length >> 11) & 0xf
+        # payload_length &= 0x7ff
         rx_payload = packet[4:]
         if technology_type:
             raise ValueError("Unsupported techlogy type: 0x%02x" % technology_type)
-        if message_type == 0x00:
+        if message_type == 0:
             # 0x00 = BLE response packet
             self.parse_bgapi_response(packet_class, packet_command, rx_payload, callbacks)
-        elif message_type == 0x80:
+        elif message_type == 1:
             # 0x80 = BLE event packet
             self.parse_bgapi_event(packet_class, packet_command, rx_payload, callbacks)
 
@@ -558,7 +557,7 @@ class BlueGigaAPI(object):
                 callbacks.ble_evt_connection_version_ind(connection=connection, vers_nr=vers_nr, comp_id=comp_id, sub_vers_nr=sub_vers_nr)
             elif packet_command == 2:
                 connection, features_len = struct.unpack('<BB', rx_payload[:2])
-                features_data = [ord(b) for b in rx_payload[2:]]
+                features_data = struct.unpack('B' * features_len, rx_payload[2:])
                 callbacks.ble_evt_connection_feature_ind(connection=connection, features=features_data)
             elif packet_command == 3:
                 connection, data_len = struct.unpack('<BB', rx_payload[:2])
@@ -978,7 +977,7 @@ class BlueGigaCallbacks(object):
 
     def ble_evt_gap_scan_response(self, rssi, packet_type, sender, address_type, bond, data):
         logger.info("EVT-GAP Scan Response - RSSI:%d - Packet Type:%d - " % (rssi, packet_type) +
-                    "Sender:%02x:%02x:%02x:%02x:%02x:%02x - " % tuple([ord(i) for i in sender[::-1]]) +
+                    "Sender:%02x:%02x:%02x:%02x:%02x:%02x - " % struct.unpack('BBBBBB', sender[::-1]) +
                     "Address Type:%d - Bond:%d - Data:" % (address_type, bond) +
                     hexlify(data).decode('ascii').upper())
 

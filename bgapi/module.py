@@ -40,11 +40,12 @@ class BLEScanResponse(object):
     def parse_advertisement_data(self):
         remaining = self.data
         while len(remaining) > 0:
-            length = ord(remaining[0])
+            length, = struct.unpack('B', remaining[:1])
             gap_data = remaining[1:length+1]
 
             adv_seg={}
-            adv_seg["Type"] = self.get_ad_type_string(gap_data[0])
+            adv_seg_type, = struct.unpack('B', gap_data[0])
+            adv_seg["Type"] = self.get_ad_type_string(adv_seg_type)
             adv_seg["Data"] = gap_data[1:]
             self.adv_payload.append( adv_seg)
             #print("GAP Data: %s" % ("".join(["\\x%02x" % ord(i) for i in gap_data])))
@@ -67,7 +68,6 @@ class BLEScanResponse(object):
         return self.services
 
     def get_ad_type_string(self, type):
-        type_ord = ord(type)
         return {
             0x01: "BLE_GAP_AD_TYPE_FLAGS",
             0x02: "BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_MORE_AVAILABLE",
