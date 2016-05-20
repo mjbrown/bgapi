@@ -1,3 +1,4 @@
+from __future__ import print_function
 import time
 import sys
 import logging
@@ -5,10 +6,9 @@ import logging.handlers
 
 from bgapi.module import BlueGigaModule, GATTCharacteristic, GATTService, BlueGigaClient, BlueGigaServer
 from bgapi.cmd_def import gap_discoverable_mode, gap_connectable_mode
-from __future__ import print_function
 
-CLIENT_SERIAL = "COM9"
-SERVER_SERIAL = "COM12"
+CLIENT_SERIAL = "COM3"
+SERVER_SERIAL = "COM7"
 
 def test_physical_web(ble_client, ble_server):
     ble_client.reset_ble_state()
@@ -41,6 +41,16 @@ def test_simple_scan(ble_client, ble_server):
     responses = ble_client.scan_all(timeout=5)
 
 
+def test_directed_connectable(ble_client, ble_server):
+    ble_client.reset_ble_state()
+    ble_client.get_module_info()
+
+    ble_server.reset_ble_state()
+    ble_server.get_module_info()
+    ble_server._api.ble_cmd_gap_set_directed_connectable_mode(ble_client.get_ble_address(), 0)
+    time.sleep(1)
+
+
 def test_connect_discover(ble_client, ble_server):
     ble_client.reset_ble_state()
     ble_server.reset_ble_state()
@@ -68,6 +78,7 @@ def test_connect_discover(ble_client, ble_server):
             print("%s - Handle:%d - Current Value:%s" % (description.value, characteristic.handle, characteristic.value))
 
     ble_client.disconnect(connection)
+
 
 def test_client_operations(ble_client, ble_server):
     # BLE Device configuration and start advertising
@@ -123,10 +134,12 @@ def test_client_operations(ble_client, ble_server):
     ble_client.disconnect(connection.handle)
     time.sleep(0.5)  # So that we can see the server disconnect event
 
+
 if __name__ == "__main__":
     ble_client = BlueGigaClient(port=CLIENT_SERIAL, baud=115200, timeout=0.1)
     ble_server = BlueGigaServer(port=SERVER_SERIAL, baud=115200, timeout=0.1)
-    ble_server.pipe_logs_to_terminal()
+    ble_server.pipe_logs_to_terminal(level=logging.DEBUG)
+    test_directed_connectable(ble_client, ble_server)
     test_simple_scan(ble_client, ble_server)
     test_ibeacon(ble_client, ble_server)
     test_physical_web(ble_client, ble_server)
