@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
+from __future__ import print_function
 from setuptools import setup
 
 
@@ -46,8 +47,9 @@ setup(
       "Development Status :: 3 - Alpha",
       "Intended Audience :: Developers",
       "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
-      "Programming Language :: Python :: 2.6",
       "Programming Language :: Python :: 2.7",
+      "Programming Language :: Python :: 3",
+      "Programming Language :: Python :: 3.5",
       "Topic :: Software Development :: Libraries",
       "Operating System :: OS Independent",
   ],

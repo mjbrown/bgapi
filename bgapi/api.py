@@ -1,20 +1,29 @@
+from __future__ import absolute_import
 import threading
 import struct
 import serial
 import logging
+import sys
 
-from cmd_def import RESULT_CODE, ATTRIBUTE_CHANGE_REASON, ATTRIBUTE_STATUS_FLAGS, ATTRIBUTE_VALUE_TYPE
+from binascii import hexlify
+from .cmd_def import RESULT_CODE, ATTRIBUTE_CHANGE_REASON, ATTRIBUTE_STATUS_FLAGS, ATTRIBUTE_VALUE_TYPE
 
 logger = logging.getLogger("bgapi")
 
 MAX_BGAPI_PACKET_SIZE = 3 + 2048
+
+def hexlify_nice(data):
+    if sys.version_info >= (3, ):
+        return ' '.join([ '%02X' % b for b in data ])
+    else:
+        return ' '.join([ '%02X' % ord(b) for b in data ])
 
 class BlueGigaAPI(object):
     def __init__(self, port, callbacks=None, baud=115200, timeout=1):
         self._serial = serial.Serial(port=port, baudrate=baud, timeout=timeout)
         self._serial.flushInput()
         self._serial.flushOutput()
-        self.rx_buffer = ""
+        self.rx_buffer = b''
         self._packet_size = 4
         self._timeout = timeout
         if not callbacks:
@@ -23,7 +32,7 @@ class BlueGigaAPI(object):
             self._callbacks = callbacks
 
     def _run(self):
-        self.rx_buffer = ""
+        self.rx_buffer = b''
         while (self._continue):
             self.poll_serial()
         self._serial.close()
@@ -31,7 +40,7 @@ class BlueGigaAPI(object):
     def poll_serial(self, max_read_len=MAX_BGAPI_PACKET_SIZE):
         self.rx_buffer += self._serial.read(min(self._packet_size - len(self.rx_buffer), max_read_len))
         while len(self.rx_buffer) >= self._packet_size:
-            self._packet_size = 4 + (ord(self.rx_buffer[0]) & 0x07)*256 + ord(self.rx_buffer[1])
+            self._packet_size = 4 + (struct.unpack('>H', self.rx_buffer[:2])[0] & 0x7FF)
             if len(self.rx_buffer) < self._packet_size:
                 break
             packet, self.rx_buffer = self.rx_buffer[:self._packet_size], self.rx_buffer[self._packet_size:]
@@ -65,7 +74,7 @@ class BlueGigaAPI(object):
         It is easier to use the ble_cmd methods, use this if you know how to compose your own BGAPI packets.
         """
         cmd = struct.pack('>HBB', len(payload), packet_class, packet_command) + payload
-        logger.debug('=>[ ' + ' '.join(['%02X' % ord(b) for b in cmd ]) + ' ]')
+        logger.debug('=>[ ' + hexlify_nice(cmd) + ' ]')
         self._serial.write(cmd)
 
     def ble_cmd_system_reset(self, boot_in_dfu):
@@ -201,7 +210,7 @@ class BlueGigaAPI(object):
     def ble_cmd_gap_set_adv_data(self, set_scanrsp, adv_data):
         self.send_command(6, 9, struct.pack('<BB' + str(len(adv_data)) + 's',  set_scanrsp, len(adv_data), adv_data))
     def ble_cmd_gap_set_directed_connectable_mode(self, address, addr_type):
-        self.send_command(6, 10, struct.pack('<6sB', b''.join(chr(i) for i in address), addr_type))
+        self.send_command(6, 10, struct.pack('<6BB', *address, addr_type))
     def ble_cmd_hardware_io_port_config_irq(self, port, enable_bits, falling_edge):
         self.send_command(7, 0, struct.pack('<BBB', port, enable_bits, falling_edge))
     def ble_cmd_hardware_set_soft_timer(self, time, handle, single_shot):
@@ -244,19 +253,18 @@ class BlueGigaAPI(object):
         self.send_command(8, 5, struct.pack('<B' + str(len(input)) + 's', len(input), input))
 
     def parse_bgapi_packet(self, packet, callbacks=None):
-        logger.debug('<=[ ' + ' '.join(['%02X' % ord(b) for b in packet ]) + ' ]')
-        message_type = ord(packet[0]) & 0x80
-        technology_type = ord(packet[0]) & 0x78
-        #payload_length = ord(packet[1])
-        packet_class = ord(packet[2])
-        packet_command = ord(packet[3])
+        logger.debug('<=[ ' + hexlify_nice(packet) + ' ]')
+        payload_length, packet_class, packet_command = struct.unpack('>HBB', packet[:4])
+        message_type = payload_length >> 15
+        technology_type = (payload_length >> 11) & 0xf
+        # payload_length &= 0x7ff
         rx_payload = packet[4:]
         if technology_type:
             raise ValueError("Unsupported techlogy type: 0x%02x" % technology_type)
-        if message_type == 0x00:
+        if message_type == 0:
             # 0x00 = BLE response packet
             self.parse_bgapi_response(packet_class, packet_command, rx_payload, callbacks)
-        elif message_type == 0x80:
+        elif message_type == 1:
             # 0x80 = BLE event packet
             self.parse_bgapi_event(packet_class, packet_command, rx_payload, callbacks)
 
@@ -556,7 +564,7 @@ class BlueGigaAPI(object):
                 callbacks.ble_evt_connection_version_ind(connection=connection, vers_nr=vers_nr, comp_id=comp_id, sub_vers_nr=sub_vers_nr)
             elif packet_command == 2:
                 connection, features_len = struct.unpack('<BB', rx_payload[:2])
-                features_data = [ord(b) for b in rx_payload[2:]]
+                features_data = struct.unpack('B' * features_len, rx_payload[2:])
                 callbacks.ble_evt_connection_feature_ind(connection=connection, features=features_data)
             elif packet_command == 3:
                 connection, data_len = struct.unpack('<BB', rx_payload[:2])
@@ -629,7 +637,7 @@ class BlueGigaCallbacks(object):
         logger.info("RSP-System Hello")
 
     def ble_rsp_system_address_get(self, address):
-        logger.info("RSP-System Address Get - " + "".join(["%02X" % ord(i) for i in address]))
+        logger.info("RSP-System Address Get - " + hexlify(address).decode('ascii').upper())
 
     def ble_rsp_system_reg_write(self, result):
         logger.info("RSP-System Register Write: [%s]" % RESULT_CODE[result])
@@ -696,10 +704,10 @@ class BlueGigaCallbacks(object):
         logger.info("RSP-Attributes Write: [%s]" %  RESULT_CODE[result])
 
     def ble_rsp_attributes_read(self, handle, offset, result, value):
-        logger.info("RSP-Attributes Read [%s] - Handle:%d - Offset:%d - Value:%s" %  (RESULT_CODE[result], handle, offset, "".join(["%02X" % ord(i) for i in value[::-1]])))
+        logger.info("RSP-Attributes Read [%s] - Handle:%d - Offset:%d - Value:%s" %  (RESULT_CODE[result], handle, offset, hexlify(value[::-1]).decode('ascii').upper()))
 
     def ble_rsp_attributes_read_type(self, handle, result, value):
-        logger.info("RSP-Attributes Read Type [%s] - Handle:%d Value:%s" %  (RESULT_CODE[result], handle, "".join(["%02X" % ord(i) for i in value[::-1]])))
+        logger.info("RSP-Attributes Read Type [%s] - Handle:%d Value:%s" %  (RESULT_CODE[result], handle, hexlify(value[::-1]).decode('ascii').upper()))
 
     def ble_rsp_attributes_user_read_response(self):
         logger.info("RSP-Attributes User Read Response")
@@ -908,7 +916,7 @@ class BlueGigaCallbacks(object):
 
     def ble_evt_attributes_value(self, connection, reason, handle, offset, value):
         logger.info("EVT-Attributes Value - Connection:%d - Reason:[%s] - Handle:%d - Offset:%d - " % (connection, ATTRIBUTE_CHANGE_REASON[reason], handle, offset) + \
-            "Value:%s" % ("".join(["%02X" % ord(i) for i in value])))
+            "Value:%s" % (hexlify(value).decode('ascii').upper(), ))
 
     def ble_evt_attributes_user_read_request(self, connection, handle, offset, maxsize):
         logger.info("EVT-Attributes User Read Request")
@@ -918,7 +926,7 @@ class BlueGigaCallbacks(object):
 
     def ble_evt_connection_status(self, connection, flags, address, address_type, conn_interval, timeout, latency, bonding):
         logger.info("EVT-Connection Status - Handle:%d - Flags:%02X - " % (connection, flags) +
-                    "Address:%s - " % ("".join(["%02X" % ord(i) for i in address[::-1]])) +
+                    "Address:%s - " % (hexlify(address[::-1]).decode('ascii').upper(), ) +
                     "Address Type:%d - Interval:%d - Timeout:%d - Latency:%d - Bonding:%d" % (address_type, conn_interval, timeout, latency, bonding))
 
     def ble_evt_connection_version_ind(self, connection, vers_nr, comp_id, sub_vers_nr):
@@ -942,18 +950,18 @@ class BlueGigaCallbacks(object):
 
     def ble_evt_attclient_group_found(self, connection, start, end, uuid):
         logger.info("EVT-Attribute Client Group Found - Connection:%d - Start Handle:%d - End Handle:%d - " % (connection, start, end) +
-                    "UUID:" + "".join(["%02X" % ord(i) for i in uuid[::-1]]))
+                    "UUID:" + hexlify(uuid[::-1]).decode('ascii').upper())
 
     def ble_evt_attclient_attribute_found(self, connection, chrdecl, value, properties, uuid):
         logger.info("EVT-Attribute Client Attribute Found")
 
     def ble_evt_attclient_find_information_found(self, connection, chrhandle, uuid):
         logger.info("EVT-Attribute Client Find Information Found - Connection:%d - Handle:%d - " % (connection, chrhandle) +
-                    "UUID:" + "".join(["\\x%02X" % ord(i) for i in uuid[::-1]]))
+                    "UUID:" + hexlify(uuid[::-1]).decode('ascii').upper())
 
     def ble_evt_attclient_attribute_value(self, connection, atthandle, type, value):
         logger.info("EVT-Attribute Client Attribute Value - Connection:%d - Handle:%d - Type:%d - Value:%s" %
-                    (connection, atthandle, type, "".join(["%02x" % ord(i) for i in value])))
+                    (connection, atthandle, type, hexlify(value).decode('ascii').upper()))
 
     def ble_evt_attclient_read_multiple_response(self, connection, handles):
         logger.info("EVT-Attribute Client Read Multiple Response")
@@ -976,9 +984,9 @@ class BlueGigaCallbacks(object):
 
     def ble_evt_gap_scan_response(self, rssi, packet_type, sender, address_type, bond, data):
         logger.info("EVT-GAP Scan Response - RSSI:%d - Packet Type:%d - " % (rssi, packet_type) +
-                    "Sender:%02x:%02x:%02x:%02x:%02x:%02x - " % tuple([ord(i) for i in sender[::-1]]) +
+                    "Sender:%02x:%02x:%02x:%02x:%02x:%02x - " % struct.unpack('BBBBBB', sender[::-1]) +
                     "Address Type:%d - Bond:%d - Data:" % (address_type, bond) +
-                    "".join((["%02x"% ord(i) for i in data])))
+                    hexlify(data).decode('ascii').upper())
 
     def ble_evt_gap_mode_changed(self, discover, connect):
         logger.info("EVT-GAP Mode Changed")

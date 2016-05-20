@@ -1,9 +1,10 @@
+from __future__ import absolute_import
 import time
 import struct
 import operator
 
-from api import BlueGigaAPI, BlueGigaCallbacks
-from cmd_def import gap_discoverable_mode, gap_connectable_mode, gap_discover_mode, \
+from .api import BlueGigaAPI, BlueGigaCallbacks
+from .cmd_def import gap_discoverable_mode, gap_connectable_mode, gap_discover_mode, \
     connection_status_mask, sm_io_capability
 from threading import Event
 import logging
@@ -39,25 +40,26 @@ class BLEScanResponse(object):
     def parse_advertisement_data(self):
         remaining = self.data
         while len(remaining) > 0:
-            length = ord(remaining[0])
+            length, = struct.unpack('B', remaining[:1])
             gap_data = remaining[1:length+1]
 
             adv_seg={}
-            adv_seg["Type"] = self.get_ad_type_string(gap_data[0])
+            adv_seg_type, = struct.unpack('B', gap_data[0])
+            adv_seg["Type"] = self.get_ad_type_string(adv_seg_type)
             adv_seg["Data"] = gap_data[1:]
             self.adv_payload.append( adv_seg)
-            #print "GAP Data: %s" % ("".join(["\\x%02x" % ord(i) for i in gap_data]))
+            #print("GAP Data: %s" % ("".join(["\\x%02x" % ord(i) for i in gap_data])))
             remaining = remaining[length+1:]
 
             if gap_data[0] == 0x1:  # Flags
                 pass
-            elif gap_data[0] == "\x02" or gap_data[0] == "\x03":  # Incomplete/Complete list of 16-bit UUIDs
+            elif gap_data[0] == b"\x02" or gap_data[0] == b"\x03":  # Incomplete/Complete list of 16-bit UUIDs
                 for i in range((len(gap_data) - 1)/2):
                     self.services += [gap_data[2*i+1:2*i+3]]
-            elif gap_data[0] == "\x04" or gap_data[0] == "\x05":  # Incomplete list of 32-bit UUIDs
+            elif gap_data[0] == b"\x04" or gap_data[0] == b"\x05":  # Incomplete list of 32-bit UUIDs
                 for i in range((len(gap_data) - 1)/4):
                     self.services += [gap_data[4*i+1:4*i+5]]
-            elif gap_data[0] == "\x06" or gap_data[0] == "\x07":  # Incomplete list of 128-bit UUIDs
+            elif gap_data[0] == b"\x06" or gap_data[0] == b"\x07":  # Incomplete list of 128-bit UUIDs
                 for i in range((len(gap_data) - 1)/16):
                     self.services += [gap_data[16*i+1:16*i+17]]
 
@@ -66,7 +68,6 @@ class BLEScanResponse(object):
         return self.services
 
     def get_ad_type_string(self, type):
-        type_ord = ord(type)
         return {
             0x01: "BLE_GAP_AD_TYPE_FLAGS",
             0x02: "BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_MORE_AVAILABLE",
@@ -109,8 +110,8 @@ class GATTCharacteristicDescriptor(object):
 
 
 class GATTService(object):
-    PRIMARY_SERVICE_UUID = "\x00\x28"  # [0x00, 0x28]
-    SECONDARY_SERVICE_UUID = "\x01\x28"  # [0x01, 0x28]
+    PRIMARY_SERVICE_UUID = b"\x00\x28"  # [0x00, 0x28]
+    SECONDARY_SERVICE_UUID = b"\x01\x28"  # [0x01, 0x28]
 
     def __init__(self, start_handle, end_handle, uuid):
         self.start_handle = start_handle
@@ -119,9 +120,9 @@ class GATTService(object):
 
 
 class GATTCharacteristic(object):
-    CHARACTERISTIC_UUID = "\x03\x28"
-    CLIENT_CHARACTERISTIC_CONFIG = "\x02\x29"
-    USER_DESCRIPTION = "\x01\x29"
+    CHARACTERISTIC_UUID = b"\x03\x28"
+    CLIENT_CHARACTERISTIC_CONFIG = b"\x02\x29"
+    USER_DESCRIPTION = b"\x01\x29"
 
     def __init__(self, handle, properties):
         self.handle = handle
@@ -326,7 +327,7 @@ class BLEConnection(ProcedureManager):
         descriptor = characteristic.get_descriptor_by_uuid(GATTCharacteristic.CLIENT_CHARACTERISTIC_CONFIG)
         if not descriptor:
             raise BlueGigaModuleException("Unable to find Client Characteristic Config (must Read by Type 0x2902)")
-        config = chr((2 if indicate else 0) + (1 if notify else 0)) + "\x00"
+        config = struct.pack('BB', (2 if indicate else 0) + (1 if notify else 0), 0)
         self.write_by_handle(descriptor.handle, config, timeout=1)
 
     def request_encryption(self, bond=True, timeout=1):
@@ -587,10 +588,10 @@ class BlueGigaServer(BlueGigaModule):
                 encoded_uri = encoded_uri.replace('-', '')
                 encoded_uri = encoded_uri.decode("hex")
 
-        #advertisement_data = "\x02\x01\x06"
-        advertisement_data = "\x03\x03\xD8\xFE"
-        advertisement_data += chr(5+len(encoded_uri))
-        advertisement_data += "\x16\xD8\xFE\x00\x08"
+        #advertisement_data = b"\x02\x01\x06"
+        advertisement_data = b"\x03\x03\xD8\xFE"
+        advertisement_data += struct.pack('B', 5+len(encoded_uri))
+        advertisement_data += b"\x16\xD8\xFE\x00\x08"
         advertisement_data += encoded_uri
         self._api.ble_cmd_gap_set_adv_data(0, adv_data=advertisement_data)
 
@@ -642,6 +643,6 @@ class BlueGigaServer(BlueGigaModule):
         if handle in self.handle_values and offset > 0:
             self.handle_values[handle] = self.handle_values[handle][:offset] + value
         elif offset > 0:
-            self.handle_values[handle] = "\x00"*offset + value
+            self.handle_values[handle] = b"\x00"*offset + value
         else:
             self.handle_values[handle] = value
