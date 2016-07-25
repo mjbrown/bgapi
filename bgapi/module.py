@@ -44,22 +44,22 @@ class BLEScanResponse(object):
             gap_data = remaining[1:length+1]
 
             adv_seg={}
-            adv_seg_type, = struct.unpack('B', gap_data[0])
+            adv_seg_type, = struct.unpack('B', gap_data[:1])
             adv_seg["Type"] = self.get_ad_type_string(adv_seg_type)
             adv_seg["Data"] = gap_data[1:]
             self.adv_payload.append( adv_seg)
             #print("GAP Data: %s" % ("".join(["\\x%02x" % ord(i) for i in gap_data])))
             remaining = remaining[length+1:]
 
-            if gap_data[0] == 0x1:  # Flags
+            if adv_seg_type == 0x1:  # Flags
                 pass
-            elif gap_data[0] == b"\x02" or gap_data[0] == b"\x03":  # Incomplete/Complete list of 16-bit UUIDs
+            elif adv_seg_type == 0x02 or adv_seg_type == 0x03:  # Incomplete/Complete list of 16-bit UUIDs
                 for i in range((len(gap_data) - 1)/2):
                     self.services += [gap_data[2*i+1:2*i+3]]
-            elif gap_data[0] == b"\x04" or gap_data[0] == b"\x05":  # Incomplete list of 32-bit UUIDs
+            elif adv_seg_type == 0x04 or adv_seg_type == 0x05:  # Incomplete list of 32-bit UUIDs
                 for i in range((len(gap_data) - 1)/4):
                     self.services += [gap_data[4*i+1:4*i+5]]
-            elif gap_data[0] == b"\x06" or gap_data[0] == b"\x07":  # Incomplete list of 128-bit UUIDs
+            elif adv_seg_type == 0x06 or adv_seg_type == 0x07:  # Incomplete list of 128-bit UUIDs
                 for i in range((len(gap_data) - 1)/16):
                     self.services += [gap_data[16*i+1:16*i+17]]
 
@@ -67,7 +67,7 @@ class BLEScanResponse(object):
         self.parse_advertisement_data()
         return self.services
 
-    def get_ad_type_string(self, type):
+    def get_ad_type_string(self, type_ord):
         return {
             0x01: "BLE_GAP_AD_TYPE_FLAGS",
             0x02: "BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_MORE_AVAILABLE",
