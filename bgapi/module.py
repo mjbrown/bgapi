@@ -54,14 +54,14 @@ class BLEScanResponse(object):
             if adv_seg_type == 0x1:  # Flags
                 pass
             elif adv_seg_type == 0x02 or adv_seg_type == 0x03:  # Incomplete/Complete list of 16-bit UUIDs
-                for i in range((len(gap_data) - 1)/2):
-                    self.services += [gap_data[2*i+1:2*i+3]]
+                for i in range(1, len(gap_data) - 1, 2):
+                    self.services += [gap_data[i:i+2]]
             elif adv_seg_type == 0x04 or adv_seg_type == 0x05:  # Incomplete list of 32-bit UUIDs
-                for i in range((len(gap_data) - 1)/4):
-                    self.services += [gap_data[4*i+1:4*i+5]]
+                for i in range(1, len(gap_data) - 3, 4):
+                    self.services += [gap_data[i:i+4]]
             elif adv_seg_type == 0x06 or adv_seg_type == 0x07:  # Incomplete list of 128-bit UUIDs
-                for i in range((len(gap_data) - 1)/16):
-                    self.services += [gap_data[16*i+1:16*i+17]]
+                for i in range(1, len(gap_data) - 15, 16):
+                    self.services += [gap_data[i:i+16]]
 
     def get_services(self):
         self.parse_advertisement_data()
