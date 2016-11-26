@@ -246,7 +246,7 @@ class BLEConnection(ProcedureManager):
                         characteristic.add_descriptor(self.handle_uuid[handle], handle, value)
                         break
         else:
-            raise BlueGigaModuleException("Attribute Value for Handle %d received with unknown UUID!" % (handle))
+            raise BlueGigaModuleException("Attribute Value for Handle %d received with unknown UUID!" % (handle, ))
         if handle in self.attrclient_value_cb:
             self.attrclient_value_cb[handle](value)
 
@@ -282,7 +282,7 @@ class BLEConnection(ProcedureManager):
         self.start_procedure(PROCEDURE)
         self._api.ble_cmd_attclient_attribute_write(self.handle, handle, value)
         if not self.wait_for_procedure(timeout=timeout):
-            raise BlueGigaModuleException("Write did not complete before timeout! Connection:%d - Handle:%d" % self.handle, handle)
+            raise BlueGigaModuleException("Write did not complete before timeout! Connection:%d - Handle:%d" % (self.handle, handle))
 
     def wr_noresp_by_uuid(self, uuid, value, timeout=3):
         for handle in self.uuid_handle[uuid]:
@@ -323,12 +323,12 @@ class BLEConnection(ProcedureManager):
         self._api.ble_cmd_attclient_execute_write(self.handle, 1) # 1 = commit, 0 = cancel
         self.wait_for_procedure(timeout=timeout)
 
-    def characteristic_subscription(self, characteristic, indicate=True, notify=True):
+    def characteristic_subscription(self, characteristic, indicate=True, notify=True, timeout=1):
         descriptor = characteristic.get_descriptor_by_uuid(GATTCharacteristic.CLIENT_CHARACTERISTIC_CONFIG)
         if not descriptor:
             raise BlueGigaModuleException("Unable to find Client Characteristic Config (must Read by Type 0x2902)")
         config = struct.pack('BB', (2 if indicate else 0) + (1 if notify else 0), 0)
-        self.write_by_handle(descriptor.handle, config, timeout=1)
+        self.write_by_handle(descriptor.handle, config, timeout=timeout)
 
     def request_encryption(self, bond=True, timeout=1):
         self.start_procedure(START_ENCRYPTION)
