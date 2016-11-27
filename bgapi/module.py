@@ -25,8 +25,6 @@ CONNECT = "Connection Attempt in Progress"
 DISCONNECT = "Disconnect in Progress"
 CONN_PARAM_UPDATE = "Connection Parameter Update Expected"
 
-MAX_CONNECTIONS = 8
-
 class BlueGigaModuleException(Exception):
     pass
 
@@ -343,7 +341,7 @@ class BLEConnection(ProcedureManager):
 
     @connected
     def read_by_handle(self, handle, timeout=3):
-        with self.procedure_call(PROCEDURE, timeout):
+        with self.procedure_call(READ_ATTRIBUTE, timeout):
             self._api.ble_cmd_attclient_read_by_handle(self.handle, handle)
 
     def write_by_uuid(self, uuid, value, timeout=3):
@@ -407,9 +405,6 @@ class BLEConnection(ProcedureManager):
         with self.procedure_call(START_ENCRYPTION, timeout):
             self._api.ble_cmd_sm_encrypt_start(self.handle, 1 if bond else 0)
 
-    def close(self):
-        self._api.disconnect(self.handle)
-
 class BlueGigaModule(BlueGigaCallbacks, ProcedureManager):
     CONNECTION_OBJECT = BLEConnection
 
@@ -451,7 +446,10 @@ class BlueGigaModule(BlueGigaCallbacks, ProcedureManager):
         """ Disconnect, End Procedure, and Disable Advertising """
         self._api.ble_cmd_gap_set_mode(gap_discoverable_mode['gap_non_discoverable'],
                                        gap_connectable_mode['gap_non_connectable'])
-        for i in range(MAX_CONNECTIONS):
+
+        toDisconnect = set(self.connections.keys())
+        toDisconnect.update(range(8))
+        for i in toDisconnect:
             try:
                 self.disconnect(i)
             except RemoteError:
@@ -600,7 +598,7 @@ class BlueGigaClient(BlueGigaModule):
         super(BlueGigaClient, self).ble_evt_attclient_attribute_value(connection, atthandle, type, value)
         if connection in self.connections:
             self.connections[connection].update_handle(atthandle, value)
-            self.connections[connection].procedure_complete(READ_ATTRIBUTE)
+            self.connections[connection].procedure_complete(READ_ATTRIBUTE, type)
 
     def ble_evt_attclient_group_found(self, connection, start, end, uuid):
         super(BlueGigaClient, self).ble_evt_attclient_group_found(connection, start, end, uuid)
