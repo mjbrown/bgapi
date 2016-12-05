@@ -1,77 +1,101 @@
-RESULT_CODE = {0x0000: "OK",
-               0x0180: "Invalid Parameter",
-               0x0181: "Device in Wrong State",
-               0x0182: "Out Of Memory",
-               0x0183: "Feature Not Implemented",
-               0x0184: "Command Not Recognized",
-               0x0185: "Timeout",
-               0x0186: "Not Connected",
-               0x0187: "Flow",
-               0x0188: "User Attribute",
-               0x0189: "Invalid License Key",
-               0x018A: "Command Too Long",
-               0x018B: "Out of Bounds",
-               0x0205: "Authentication Failure",
-               0x0206: "Pin Or Key Missing",
-               0x0207: "Memory Capacity Exceeded",
-               0x0208: "Connection Timeout",
-               0x0209: "Connection Limit Exceeded",
-               0x020C: "Command Disallowed",
-               0x0212: "Invalid Command Parameters",
-               0x0213: "Remote User Terminated Connection",
-               0x0216: "Connection Terminated by Local Host",
-               0x0222: "Link Layer Timeout",
-               0x0228: "Link Layer Instant Passed",
-               0x023A: "Controller Busy",
-               0x023B: "Unacceptable Connection Interval",
-               0x023C: "Directed Advertising Timeout",
-               0x023D: "Message Integrity Check Failure",
-               0x023E: "Connection Failed to be Established",
-               0x0301: "Passkey Entry Failed",
-               0x0302: "Out of Band Data is Not Available",
-               0x0303: "Authentication Requirements",
-               0x0304: "Confirm Value Failed",
-               0x0305: "Pairing Not Supported",
-               0x0306: "Encryption Key Size",
-               0x0307: "Command Not Supported",
-               0x0308: "Unspecified Pairing Failure",
-               0x0309: "Repeated Attempts",
-               0x030A: "Invalid Parameters",
-               0x0401: "Invalid Handle",
-               0x0402: "Read Not Permitted",
-               0x0403: "Write Not Permitted",
-               0x0404: "Invalid PDU",
-               0x0405: "Insufficient Authentication",
-               0x0406: "Request Not Supported",
-               0x0407: "Invalid Offset",
-               0x0408: "Insufficient Authorization",
-               0x0409: "Prepare Queue Full",
-               0x040A: "Attribute Not Found",
-               0x040B: "Attribute Not Long",
-               0x040C: "Insufficient Encryption Key Size",
-               0x040D: "Invalid Attribute Value Length",
-               0x040E: "Unlikely Error",
-               0x040F: "Insufficient Encryption",
-               0x0410: "Unsupported Group Type",
-               0x0411: "Insufficient Resources",
-               0x0480: "Application Error Codes",
-               }
+class ReturnCodeLookupDict(object):
+   """A return code lookup dict that returns a default placeholder string if requested code is not present in the original table."""
 
-ATTRIBUTE_CHANGE_REASON = {0x0: "Write Request",
-                           0x1: "Write Command",
-                           0x2: "Write Request User"}
+   def __init__(self, lookup):
+      self._lookup = lookup
 
-ATTRIBUTE_STATUS_FLAGS = {0x0: "No Notifications or Indications",
-                          0x1: "Notification",
-                          0x2: "Indication",
-                          0x3: "Notification and Indication"}
+   def __getitem__(self, code):
+      try:
+         rv = self._lookup.get(code)
+      except KeyError:
+         rv = "Unknown Code 0x%02X"
+      return rv
 
-ATTRIBUTE_VALUE_TYPE = {0x0: "Read",
-                        0x1: "Notification",
-                        0x2: "Indication",
-                        0x3: "Read By Type",
-                        0x4: "Read Blob",
-                        0x5: "Indication Response Requested"}
+   def get(self, code, default=None):
+      return self._lookup.get(code, default)
+
+RESULT_CODE = ReturnCodeLookupDict({
+   0x0000: "OK",
+   0x0180: "Invalid Parameter",
+   0x0181: "Device in Wrong State",
+   0x0182: "Out Of Memory",
+   0x0183: "Feature Not Implemented",
+   0x0184: "Command Not Recognized",
+   0x0185: "Timeout",
+   0x0186: "Not Connected",
+   0x0187: "Flow",
+   0x0188: "User Attribute",
+   0x0189: "Invalid License Key",
+   0x018A: "Command Too Long",
+   0x018B: "Out of Bounds",
+   0x0205: "Authentication Failure",
+   0x0206: "Pin Or Key Missing",
+   0x0207: "Memory Capacity Exceeded",
+   0x0208: "Connection Timeout",
+   0x0209: "Connection Limit Exceeded",
+   0x020C: "Command Disallowed",
+   0x0212: "Invalid Command Parameters",
+   0x0213: "Remote User Terminated Connection",
+   0x0216: "Connection Terminated by Local Host",
+   0x0222: "Link Layer Timeout",
+   0x0228: "Link Layer Instant Passed",
+   0x023A: "Controller Busy",
+   0x023B: "Unacceptable Connection Interval",
+   0x023C: "Directed Advertising Timeout",
+   0x023D: "Message Integrity Check Failure",
+   0x023E: "Connection Failed to be Established",
+   0x0301: "Passkey Entry Failed",
+   0x0302: "Out of Band Data is Not Available",
+   0x0303: "Authentication Requirements",
+   0x0304: "Confirm Value Failed",
+   0x0305: "Pairing Not Supported",
+   0x0306: "Encryption Key Size",
+   0x0307: "Command Not Supported",
+   0x0308: "Unspecified Pairing Failure",
+   0x0309: "Repeated Attempts",
+   0x030A: "Invalid Parameters",
+   0x0401: "Invalid Handle",
+   0x0402: "Read Not Permitted",
+   0x0403: "Write Not Permitted",
+   0x0404: "Invalid PDU",
+   0x0405: "Insufficient Authentication",
+   0x0406: "Request Not Supported",
+   0x0407: "Invalid Offset",
+   0x0408: "Insufficient Authorization",
+   0x0409: "Prepare Queue Full",
+   0x040A: "Attribute Not Found",
+   0x040B: "Attribute Not Long",
+   0x040C: "Insufficient Encryption Key Size",
+   0x040D: "Invalid Attribute Value Length",
+   0x040E: "Unlikely Error",
+   0x040F: "Insufficient Encryption",
+   0x0410: "Unsupported Group Type",
+   0x0411: "Insufficient Resources",
+   0x0480: "Application Error Codes",
+   })
+
+
+ATTRIBUTE_CHANGE_REASON = ReturnCodeLookupDict({
+   0x0: "Write Request",
+   0x1: "Write Command",
+   0x2: "Write Request User"
+   })
+
+ATTRIBUTE_STATUS_FLAGS = ReturnCodeLookupDict({
+   0x0: "NoNotifications or Indications",
+   0x1: "Notification",
+   0x2: "Indication",
+   0x3: "Notification and Indication"
+   })
+
+ATTRIBUTE_VALUE_TYPE = ReturnCodeLookupDict({
+   0x0: "Read",
+   0x1: "Notification",
+   0x2: "Indication",
+   0x3: "Read By Type",
+   0x4: "Read Blob",
+   0x5: "Indication Response Requested"
+   })
 
 system_endpoints= {
 	'system_endpoint_api': 0,
