@@ -15,6 +15,7 @@ from .api import BlueGigaAPI, BlueGigaCallbacks
 from .cmd_def import gap_discoverable_mode, gap_connectable_mode, gap_discover_mode, \
     connection_status_mask, sm_io_capability, RESULT_CODE
 
+logger = logging.getLogger(__name__)
 
 GET_ADDRESS = "Read Address in Progress"
 PROCEDURE = "Procedure in Progress"
@@ -322,7 +323,10 @@ class BLEConnection(ProcedureManager):
         else:
             raise BlueGigaModuleException("Attribute Value for Handle %d received with unknown UUID!" % (handle, ))
         if handle in self.attrclient_value_cb:
-            self.attrclient_value_cb[handle](value)
+            try:
+                self.attrclient_value_cb[handle](value)
+            except Exception:
+                logger.exception("Callback exception")
 
     @connected
     def read_by_group_type(self, group_type, timeout=3):
