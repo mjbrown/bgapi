@@ -4,6 +4,7 @@ import struct
 import serial
 import logging
 import sys
+import traceback
 
 from binascii import hexlify
 from .cmd_def import RESULT_CODE, ATTRIBUTE_CHANGE_REASON, ATTRIBUTE_STATUS_FLAGS, ATTRIBUTE_VALUE_TYPE
@@ -45,7 +46,11 @@ class BlueGigaAPI(object):
                 break
             packet, self.rx_buffer = self.rx_buffer[:self._packet_size], self.rx_buffer[self._packet_size:]
             self._packet_size = 4
-            self.parse_bgapi_packet(packet)
+            
+            try:
+                self.parse_bgapi_packet(packet)
+            except Exception:
+                logger.exception("Error parsing bgapi packet.")
 
     def start_daemon(self):
         """
