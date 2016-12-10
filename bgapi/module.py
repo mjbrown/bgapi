@@ -285,6 +285,7 @@ class BLEConnection(ProcedureManager):
         self.handle_value = {}
         self.attrclient_value_cb = {}
         self._disconnected = None
+        self._min_connection_interval = 0
 
     def is_connected(self):
         return self._disconnected is None
@@ -301,9 +302,15 @@ class BLEConnection(ProcedureManager):
     def get_conn_interval_ms(self):
         return self.interval * 1.25
 
+    def set_min_connection_interval(self, interval):
+        self._min_connection_interval = float(interval)
+
     def get_procedure_call_interval(self):
         # Overrides `ProcedureManager`.get_procedure_call_interval
-        return self.get_conn_interval_ms() / 1000.0
+        return max(
+            self._min_connection_interval,
+            self.get_conn_interval_ms() / 1000.0,
+        )
 
     def get_timeout_ms(self):
         return self.timeout * 10
