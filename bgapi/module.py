@@ -8,7 +8,7 @@ import operator
 
 from functools import wraps
 from contextlib import contextmanager
-from collections import defaultdict, namedtuple
+from collections import defaultdict, namedtuple, deque
 from threading import Event, Lock
 
 from .api import BlueGigaAPI, BlueGigaCallbacks
@@ -208,6 +208,7 @@ class ProcedureManager(object):
     def __init__(self):
         self._typeLocks = defaultdict(Lock) # procedure type -> execution lock for that
         self._handles = {} # procedure type -> <ProcedureCallHandle>
+        self.ioTimestamps = defaultdict(lambda: deque([0], maxlen=4)) # procedure type -> time.time() of the last I/Os to the device
         
     @contextmanager
     def procedure_call(self, procedure_type, timeout, throwError=True):
@@ -216,10 +217,18 @@ class ProcedureManager(object):
             
             handle = ProcedureCallHandle()
             self._handles[procedure_type] = handle
+
+            # Ensure that the lib does not exceed connection interval.
+            earliest_interval_ts = self.ioTimestamps[procedure_type][0]
+            interval = self.get_procedure_call_interval()
+            while (time.time() - earliest_interval_ts) < interval:
+                time.sleep(max(0.01, time.time() - earliest_interval_ts))
+
             try:
 
                 yield handle # allow the caller to execute his API call in this context.
                 # the Result pair can be used by the context for
+                self.ioTimestamps[procedure_type].append(time.time())
                 
 
                 if not handle.event.wait(timeout):
@@ -232,12 +241,20 @@ class ProcedureManager(object):
 
 
     def procedure_complete(self, procedure_type, result=0x0000):
+        self.ioTimestamps[procedure_type].append(time.time())
         try:
             handle = self._handles[procedure_type]
         except KeyError:
             # This procedure had not been started, ignore the result
             return
         handle.setResult(result)
+
+    def get_active_procedure_calls(self):
+        return tuple(self._handles.keys())
+
+    def get_procedure_call_interval(self):
+        """Returns minimum time distance between two procedure calls (in seconds)."""
+        return 0
 
 def connected(fn):
     """This decorator checks that the BLEConnection is still connected before executing the payload function."""
@@ -272,11 +289,21 @@ class BLEConnection(ProcedureManager):
     def is_connected(self):
         return self._disconnected is None
 
-    def set_disconnected(self, reason):
+    def set_disconnect(self, reason):
         self._disconnected = reason
+
+    def set_disconnected(self, reason):
+        self.set_disconnect(reason)
+        # Notify any pending procedure calls
+        for typ in self.get_active_procedure_calls():
+            self.procedure_complete(typ, reason)
 
     def get_conn_interval_ms(self):
         return self.interval * 1.25
+
+    def get_procedure_call_interval(self):
+        # Overrides `ProcedureManager`.get_procedure_call_interval
+        return self.get_conn_interval_ms() / 1000.0
 
     def get_timeout_ms(self):
         return self.timeout * 10
@@ -525,7 +552,7 @@ class BlueGigaModule(BlueGigaCallbacks, ProcedureManager):
     def ble_rsp_connection_disconnect(self, connection, result):
         super(BlueGigaModule, self).ble_rsp_connection_disconnect(connection, result)
         if connection in self.connections:
-            self.connections[connection].set_disconnected(result)
+            self.connections[connection].set_disconnect(result)
         self.procedure_complete(DISCONNECT, result=result)
 
     def ble_evt_connection_disconnected(self, connection, reason):
