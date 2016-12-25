@@ -303,7 +303,7 @@ class BLEConnection(ProcedureManager):
         return self.interval * 1.25
 
     def set_min_connection_interval(self, interval):
-        self._min_connection_interval = float(interval)
+        self._min_connection_interval = 0 * float(interval)
 
     def get_procedure_call_interval(self):
         # Overrides `ProcedureManager`.get_procedure_call_interval
@@ -578,6 +578,11 @@ class BlueGigaModule(BlueGigaCallbacks, ProcedureManager):
             self.connections[connection].set_disconnected(reason)
         self.procedure_complete(DISCONNECT, result=reason)
 
+    def ble_rsp_gap_connect_direct(self, result, connection_handle):
+        super(BlueGigaModule, self).ble_rsp_gap_connect_direct(result, connection_handle)
+        if result and connection_handle in self.connections:
+            self.connections[connection_handle].set_disconnected(result)
+            self.procedure_complete(CONNECT, result=result)
 
 class BlueGigaClient(BlueGigaModule):
     def connect_by_adv_data(self, adv_data, scan_timeout=3, conn_interval_min=0x20, conn_interval_max=0x30, connection_timeout=100, latency=0):
