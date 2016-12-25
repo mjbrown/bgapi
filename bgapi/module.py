@@ -373,9 +373,19 @@ class BLEConnection(ProcedureManager):
             self._api.ble_cmd_attclient_read_by_type(self.handle, service.start_handle, service.end_handle, type)
 
     @connected
+    def read_all_characteristics_by_type(self, type, timeout=3):
+        with self.procedure_call(PROCEDURE, timeout):
+            self._api.ble_cmd_attclient_read_by_type(self.handle, 0x0001, 0xFFFF, type)
+
+    @connected
     def find_information(self, service, timeout=5):
         with self.procedure_call(PROCEDURE, timeout):
             self._api.ble_cmd_attclient_find_information(self.handle, service.start_handle, service.end_handle)
+
+    @connected
+    def find_all_information(self, timeout=5):
+        with self.procedure_call(PROCEDURE, timeout):
+            self._api.ble_cmd_attclient_find_information(self.handle, 0x0001, 0xFFFF)
 
     @connected
     def read_by_handle(self, handle, timeout=3):
