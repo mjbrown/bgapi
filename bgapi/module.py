@@ -208,10 +208,15 @@ class ProcedureManager(object):
     def __init__(self):
         self._typeLocks = defaultdict(Lock) # procedure type -> execution lock for that
         self._handles = {} # procedure type -> <ProcedureCallHandle>
-        self.ioTimestamps = defaultdict(lambda: deque([0], maxlen=4)) # procedure type -> time.time() of the last I/Os to the device
-        
+        self.ioTimestamps = None
+
+    def set_max_procedures(self, max_procedures):
+        self.ioTimestamps = defaultdict(lambda: deque([0], maxlen=max_procedures)) # procedure type -> time.time() of the last I/Os to the device
+
     @contextmanager
     def procedure_call(self, procedure_type, timeout, throwError=True):
+        if not self.ioTimestamps:
+            self.set_max_procedures(6)
         with self._typeLocks[procedure_type]:
             assert procedure_type not in self._handles # Nobody else is waiting for this procedure type
             
@@ -239,15 +244,15 @@ class ProcedureManager(object):
             finally:
                 del self._handles[procedure_type]
 
-
     def procedure_complete(self, procedure_type, result=0x0000):
-        self.ioTimestamps[procedure_type].append(time.time())
+        if self.ioTimestamps:
+            self.ioTimestamps[procedure_type].append(time.time())
         try:
             handle = self._handles[procedure_type]
+            handle.setResult(result)
         except KeyError:
             # This procedure had not been started, ignore the result
-            return
-        handle.setResult(result)
+            pass
 
     def get_active_procedure_calls(self):
         return tuple(self._handles.keys())
@@ -409,10 +414,10 @@ class BLEConnection(ProcedureManager):
     def wr_noresp_by_handle(self, handle, value, timeout=3, attempts=1):
         for i in range(attempts):
 
-            with self.procedure_call(PROCEDURE, timeout, throwError=False) as handle:
+            with self.procedure_call(PROCEDURE, timeout, throwError=False) as procedure_handle:
                 self._api.ble_cmd_attclient_write_command(self.handle, handle, value)
 
-            if handle.result != 0x0000:
+            if procedure_handle.result != 0x0000:
                 time.sleep(self.interval * 0.00125)  # Sleep for a connection interval
             else:
                 break
