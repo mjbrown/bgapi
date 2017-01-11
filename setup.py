@@ -36,7 +36,7 @@ def get_long_description():
 setup(
   name='bgapi',
   packages=['bgapi'],
-  version='0.5.2',
+  version='0.6',
   description='Interface library for BlueGiga BLE112 and BLE113 modules',
   long_description=get_long_description(),
   url='https://github.com/mjbrown/bgapi',
