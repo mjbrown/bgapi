@@ -26,6 +26,42 @@ CONNECT = "Connection Attempt in Progress"
 DISCONNECT = "Disconnect in Progress"
 CONN_PARAM_UPDATE = "Connection Parameter Update Expected"
 
+BLE_GAP_AD_TYPE_STRINGS = {
+    0x01: "BLE_GAP_AD_TYPE_FLAGS",
+    0x02: "BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_MORE_AVAILABLE",
+    0x03: "BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_COMPLETE",
+    0x04: "BLE_GAP_AD_TYPE_32BIT_SERVICE_UUID_MORE_AVAILABLE",
+    0x05: "BLE_GAP_AD_TYPE_32BIT_SERVICE_UUID_COMPLETE",
+    0x06: "BLE_GAP_AD_TYPE_128BIT_SERVICE_UUID_MORE_AVAILABLE",
+    0x07: "BLE_GAP_AD_TYPE_128BIT_SERVICE_UUID_COMPLETE",
+    0x08: "BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME",
+    0x09: "BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME",
+    0x0A: "BLE_GAP_AD_TYPE_TX_POWER_LEVEL",
+    0x0D: "BLE_GAP_AD_TYPE_CLASS_OF_DEVICE",
+    0x0E: "BLE_GAP_AD_TYPE_SIMPLE_PAIRING_HASH_C",
+    0x0F: "BLE_GAP_AD_TYPE_SIMPLE_PAIRING_RANDOMIZER_R",
+    0x10: "BLE_GAP_AD_TYPE_SECURITY_MANAGER_TK_VALUE",
+    0x11: "BLE_GAP_AD_TYPE_SECURITY_MANAGER_OOB_FLAGS",
+    0x12: "BLE_GAP_AD_TYPE_SLAVE_CONNECTION_INTERVAL_RANGE",
+    0x14: "BLE_GAP_AD_TYPE_SOLICITED_SERVICE_UUIDS_16BIT",
+    0x15: "BLE_GAP_AD_TYPE_SOLICITED_SERVICE_UUIDS_128BIT",
+    0x16: "BLE_GAP_AD_TYPE_SERVICE_DATA",
+    0x17: "BLE_GAP_AD_TYPE_PUBLIC_TARGET_ADDRESS",
+    0x18: "BLE_GAP_AD_TYPE_RANDOM_TARGET_ADDRESS",
+    0x19: "BLE_GAP_AD_TYPE_APPEARANCE",
+    0x1A: "BLE_GAP_AD_TYPE_ADVERTISING_INTERVAL",
+    0x1B: "BLE_GAP_AD_TYPE_LE_BLUETOOTH_DEVICE_ADDRESS",
+    0x1C: "BLE_GAP_AD_TYPE_LE_ROLE",
+    0x1D: "BLE_GAP_AD_TYPE_SIMPLE_PAIRING_HASH_C256",
+    0x1E: "BLE_GAP_AD_TYPE_SIMPLE_PAIRING_RANDOMIZER_R256",
+    0x20: "BLE_GAP_AD_TYPE_SERVICE_DATA_32BIT_UUID",
+    0x21: "BLE_GAP_AD_TYPE_SERVICE_DATA_128BIT_UUID",
+    0x3D: "BLE_GAP_AD_TYPE_3D_INFORMATION_DATA",
+    0xFF: "BLE_GAP_AD_TYPE_MANUFACTURER_SPECIFIC_DATA"
+}
+
+BLE_GAP_AD_TYPE = {v: k for k, v in BLE_GAP_AD_TYPE_STRINGS.items()}
+
 class BlueGigaModuleException(Exception):
     pass
 
@@ -99,39 +135,7 @@ class BLEScanResponse(object):
         return self.services
 
     def get_ad_type_string(self, type_ord):
-        return {
-            0x01: "BLE_GAP_AD_TYPE_FLAGS",
-            0x02: "BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_MORE_AVAILABLE",
-            0x03: "BLE_GAP_AD_TYPE_16BIT_SERVICE_UUID_COMPLETE",
-            0x04: "BLE_GAP_AD_TYPE_32BIT_SERVICE_UUID_MORE_AVAILABLE",
-            0x05: "BLE_GAP_AD_TYPE_32BIT_SERVICE_UUID_COMPLETE",
-            0x06: "BLE_GAP_AD_TYPE_128BIT_SERVICE_UUID_MORE_AVAILABLE",
-            0x07: "BLE_GAP_AD_TYPE_128BIT_SERVICE_UUID_COMPLETE",
-            0x08: "BLE_GAP_AD_TYPE_SHORT_LOCAL_NAME",
-            0x09: "BLE_GAP_AD_TYPE_COMPLETE_LOCAL_NAME",
-            0x0A: "BLE_GAP_AD_TYPE_TX_POWER_LEVEL",
-            0x0D: "BLE_GAP_AD_TYPE_CLASS_OF_DEVICE",
-            0x0E: "BLE_GAP_AD_TYPE_SIMPLE_PAIRING_HASH_C",
-            0x0F: "BLE_GAP_AD_TYPE_SIMPLE_PAIRING_RANDOMIZER_R",
-            0x10: "BLE_GAP_AD_TYPE_SECURITY_MANAGER_TK_VALUE",
-            0x11: "BLE_GAP_AD_TYPE_SECURITY_MANAGER_OOB_FLAGS",
-            0x12: "BLE_GAP_AD_TYPE_SLAVE_CONNECTION_INTERVAL_RANGE",
-            0x14: "BLE_GAP_AD_TYPE_SOLICITED_SERVICE_UUIDS_16BIT",
-            0x15: "BLE_GAP_AD_TYPE_SOLICITED_SERVICE_UUIDS_128BIT",
-            0x16: "BLE_GAP_AD_TYPE_SERVICE_DATA",
-            0x17: "BLE_GAP_AD_TYPE_PUBLIC_TARGET_ADDRESS",
-            0x18: "BLE_GAP_AD_TYPE_RANDOM_TARGET_ADDRESS",
-            0x19: "BLE_GAP_AD_TYPE_APPEARANCE",
-            0x1A: "BLE_GAP_AD_TYPE_ADVERTISING_INTERVAL",
-            0x1B: "BLE_GAP_AD_TYPE_LE_BLUETOOTH_DEVICE_ADDRESS",
-            0x1C: "BLE_GAP_AD_TYPE_LE_ROLE",
-            0x1D: "BLE_GAP_AD_TYPE_SIMPLE_PAIRING_HASH_C256",
-            0x1E: "BLE_GAP_AD_TYPE_SIMPLE_PAIRING_RANDOMIZER_R256",
-            0x20: "BLE_GAP_AD_TYPE_SERVICE_DATA_32BIT_UUID",
-            0x21: "BLE_GAP_AD_TYPE_SERVICE_DATA_128BIT_UUID",
-            0x3D: "BLE_GAP_AD_TYPE_3D_INFORMATION_DATA",
-            0xFF: "BLE_GAP_AD_TYPE_MANUFACTURER_SPECIFIC_DATA"
-        }[type_ord]
+        return BLE_GAP_AD_TYPE_STRINGS[type_ord]
 
 
 class GATTCharacteristicDescriptor(object):
@@ -690,6 +694,28 @@ class BlueGigaServer(BlueGigaModule):
                          interval_max=interval_max,
                          channels=channels)
 
+    def get_ad_type_ord_by_string(self, adv_type):
+        return BLE_GAP_AD_TYPE[adv_type]
+
+    def setup_adv_data(self, adv_data):
+        """
+        Set advertising data for general advertising. Make sure to include
+        at least advertising flags (BLE_GAP_AD_TYPE_FLAGS) to be a compliant
+        BLE GATT server and for the BGAPI device to be detected.
+
+        :param adv_data: Hex string of advertising data
+        """
+        self._api.ble_cmd_gap_set_adv_data(0, adv_data=adv_data.decode("hex"))
+
+    def setup_adv_rsp_data(self, adv_rsp_data):
+        """
+        Set advertising data response. Requires adv_mode=gap_discoverable_mode['gap_user_data']
+        in the start_advertisement() call for the data to be read-back by the Central.
+
+        :param adv_rsp_data: Hex string of advertising response data
+        """
+        self._api.ble_cmd_gap_set_adv_data(1, adv_data=adv_rsp_data.decode("hex"))
+
     def setup_ibeacon(self, uuid, major, minor):
         advertisement_data = "020106"       # General discovery, Single Mode Device
         advertisement_data += "1AFF"        # Manufacturer Data
@@ -698,7 +724,7 @@ class BlueGigaServer(BlueGigaModule):
         advertisement_data += "%04x%04x" % (major, minor)
         advertisement_data += "DC"          # Measured RSSI at 1m
         advertisement_data = advertisement_data.decode("hex") # LE byte list
-        self._api.ble_cmd_gap_set_adv_data(0, adv_data=advertisement_data)
+        self.setup_adv_data(adv_data=advertisement_data)
 
     def setup_physical_web(self, uri):
         encodings = [("http://www.", "\x00"),
@@ -735,7 +761,7 @@ class BlueGigaServer(BlueGigaModule):
         advertisement_data += struct.pack('B', 5+len(encoded_uri))
         advertisement_data += b"\x16\xD8\xFE\x00\x08"
         advertisement_data += encoded_uri
-        self._api.ble_cmd_gap_set_adv_data(0, adv_data=advertisement_data)
+        self.setup_adv_data(adv_data=advertisement_data)
 
     def stop_advertising(self):
         self._api.ble_cmd_gap_set_mode(discover=gap_discoverable_mode['gap_non_discoverable'],
