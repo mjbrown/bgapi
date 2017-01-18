@@ -22,6 +22,7 @@ PROCEDURE = "Procedure in Progress"
 START_ENCRYPTION = "Start Encryption in Progress"
 READ_ATTRIBUTE = "Attribute Read in Progress"
 WRITE_ATTRIBUTE = "Attribute Write in Progress"
+SEND_ATTRIBUTE = "Attribute Send in Progress"
 CONNECT = "Connection Attempt in Progress"
 DISCONNECT = "Disconnect in Progress"
 CONN_PARAM_UPDATE = "Connection Parameter Update Expected"
@@ -223,7 +224,7 @@ class ProcedureManager(object):
             self.set_max_procedures(6)
         with self._typeLocks[procedure_type]:
             assert procedure_type not in self._handles # Nobody else is waiting for this procedure type
-            
+
             handle = ProcedureCallHandle()
             self._handles[procedure_type] = handle
 
@@ -771,13 +772,18 @@ class BlueGigaServer(BlueGigaModule):
         with self.procedure_call(PROCEDURE, timeout):
             self._api.ble_cmd_attributes_write(handle=handle, offset=offset, value=value)
 
+    # connection == 0xFF means notify all connections that have registered
+    def send_attribute(self, handle, value, connection=0xFF, timeout=1):
+        with self.procedure_call(SEND_ATTRIBUTE, timeout):
+            self._api.ble_cmd_attributes_send(connection=connection, handle=handle, value=value)
+
     def read_by_handle(self, handle, offset, timeout):
         with self.procedure_call(READ_ATTRIBUTE, timeout):
             self._api.ble_cmd_attributes_read(handle, offset)
         return self.handle_values[handle]
 
     def read_type(self, handle, timeout=1):
-        with self.procedure_call(PROCEDURE, timeout):
+        with self.procedure_call(READ_ATTRIBUTE, timeout):
             self._api.ble_cmd_attributes_read_type(handle)
         return self.handle_types[handle]
 
@@ -790,6 +796,10 @@ class BlueGigaServer(BlueGigaModule):
         super(BlueGigaServer, self).ble_rsp_attributes_write(result)
         self.procedure_complete(PROCEDURE)
 
+    def ble_rsp_attributes_send(self, result):
+        super(BlueGigaServer, self).ble_rsp_attributes_send(result)
+        self.procedure_complete(SEND_ATTRIBUTE)
+
     def ble_evt_attributes_value(self, connection, reason, handle, offset, value):
         super(BlueGigaServer, self).ble_evt_attributes_value(connection, reason, handle, offset, value)
         self.update_attribute_cache(handle, offset, value)
@@ -797,12 +807,12 @@ class BlueGigaServer(BlueGigaModule):
     def ble_rsp_attributes_read_type(self, handle, result, value):
         super(BlueGigaServer, self).ble_rsp_attributes_read_type(handle, result, value)
         self.handle_types[handle] = value
-        self.procedure_complete(PROCEDURE)
+        self.procedure_complete(READ_ATTRIBUTE)
 
     def ble_rsp_attributes_read(self, handle, offset, result, value):
         super(BlueGigaServer, self).ble_rsp_attributes_read(handle, offset, result, value)
         self.update_attribute_cache(handle, offset, value)
-        self.procedure_complete(PROCEDURE)
+        self.procedure_complete(READ_ATTRIBUTE)
 
     def update_attribute_cache(self, handle, offset, value):
         if handle in self.handle_values and offset > 0:
