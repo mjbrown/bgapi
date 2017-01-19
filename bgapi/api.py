@@ -138,6 +138,8 @@ class BlueGigaAPI(object):
         self.send_command(2, 3, struct.pack('<BBB' + str(len(value)) + 's', connection, att_error, len(value), value))
     def ble_cmd_attributes_user_write_response(self, connection, att_error):
         self.send_command(2, 4, struct.pack('<BB', connection, att_error))
+    def ble_cmd_attributes_send(self, connection, handle, value):
+        self.send_command(2, 5, struct.pack('<BHB' + str(len(value)) + 's', connection, handle, len(value), value))
     def ble_cmd_connection_disconnect(self, connection):
         self.send_command(3, 0, struct.pack('<B', connection))
     def ble_cmd_connection_get_rssi(self, connection):
@@ -352,6 +354,9 @@ class BlueGigaAPI(object):
                 callbacks.ble_rsp_attributes_user_read_response()
             elif packet_command == 4:
                 callbacks.ble_rsp_attributes_user_write_response()
+            elif packet_command == 5:
+                result = struct.unpack('<H', rx_payload[:2])[0]
+                callbacks.ble_rsp_attributes_send(result=result)
         elif packet_class == 3:
             if packet_command == 0:
                 connection, result = struct.unpack('<BH', rx_payload[:3])
@@ -712,13 +717,16 @@ class BlueGigaCallbacks(object):
         logger.info("RSP-Attributes Read [%s] - Handle:%d - Offset:%d - Value:%s" %  (RESULT_CODE[result], handle, offset, hexlify(value[::-1]).decode('ascii').upper()))
 
     def ble_rsp_attributes_read_type(self, handle, result, value):
-        logger.info("RSP-Attributes Read Type [%s] - Handle:%d Value:%s" %  (RESULT_CODE[result], handle, hexlify(value[::-1]).decode('ascii').upper()))
+        logger.info("RSP-Attributes Read Type [%s] - Handle:%d Value:%s" % (RESULT_CODE[result], handle, hexlify(value[::-1]).decode('ascii').upper()))
 
     def ble_rsp_attributes_user_read_response(self):
         logger.info("RSP-Attributes User Read Response")
 
     def ble_rsp_attributes_user_write_response(self):
         logger.info("RSP-Attributes User Write Response")
+
+    def ble_rsp_attributes_send(self, result):
+        logger.info("RSP-Attributes Send [%s]", RESULT_CODE[result])
 
     def ble_rsp_connection_disconnect(self, connection, result):
         logger.info("RSP-Connection Disconnect - Connection:%d - [%s]" % (connection, RESULT_CODE[result]))
