@@ -65,7 +65,7 @@ def test_connect_discover(ble_client, ble_server):
         raise Exception("No Advertisements received from server %s" % (ble_server.get_ble_address()))
 
     connection = ble_client.connect(target=target)
-    connection.read_by_group_type(type=GATTService.PRIMARY_SERVICE_UUID)
+    connection.read_by_group_type(group_type=GATTService.PRIMARY_SERVICE_UUID)
     for service in connection.get_services():
         connection.find_information(service=service)
         connection.read_by_type(service=service, type=GATTCharacteristic.CHARACTERISTIC_UUID)
@@ -106,8 +106,8 @@ def test_client_operations(ble_client, ble_server):
     ble_client.set_out_of_band_data(oob_data)
     ble_server.set_out_of_band_data(oob_data)
     connection.request_encryption(bond=True)
-    connection.read_by_group_type(type=GATTService.PRIMARY_SERVICE_UUID)
-    connection.read_by_group_type(type=GATTService.SECONDARY_SERVICE_UUID)
+    connection.read_by_group_type(group_type=GATTService.PRIMARY_SERVICE_UUID)
+    connection.read_by_group_type(group_type=GATTService.SECONDARY_SERVICE_UUID)
     for service in connection.get_services():
         connection.find_information(service=service)
         connection.read_by_type(service=service, type=GATTCharacteristic.CHARACTERISTIC_UUID)
