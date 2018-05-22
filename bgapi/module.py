@@ -120,10 +120,10 @@ class BLEScanResponse(object):
             length, = struct.unpack('B', remaining[:1])
             gap_data = remaining[1:length+1]
 
-            (adv_seg_type,) = struct.unpack('B', gap_data[:1])
             try:
+                (adv_seg_type,) = struct.unpack('B', gap_data[:1])
                 adv_seg_name = self.get_ad_type_string(adv_seg_type)
-            except KeyError:
+            except (KeyError, struct.error):
                 adv_seg_name = None
 
             self.adv_payload.append(AdvancedSegment(adv_seg_type, adv_seg_name, gap_data[1:]))
