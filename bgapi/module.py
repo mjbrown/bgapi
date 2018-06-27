@@ -242,8 +242,10 @@ class ProcedureManager(object):
             # Ensure that the lib does not exceed connection interval.
             earliest_interval_ts = self.ioTimestamps[procedure_type][0]
             interval = self.get_procedure_call_interval()
-            while (time.time() - earliest_interval_ts) < interval:
-                time.sleep(max(0.01, time.time() - earliest_interval_ts))
+            wait_until = earliest_interval_ts + interval
+            now = time.time()
+            if now<wait_until:
+                time.sleep(max(0.00125, wait_until - now))
 
             try:
 
