@@ -109,6 +109,7 @@ class BLEScanResponse(object):
         self.data = data
         self.services = []
         self.adv_payload = []
+        self.name = ''
         self.created = time.time()
 
     def get_sender_address(self):
@@ -141,10 +142,16 @@ class BLEScanResponse(object):
             elif adv_seg_type == 0x06 or adv_seg_type == 0x07:  # Incomplete list of 128-bit UUIDs
                 for i in range(1, len(gap_data) - 15, 16):
                     self.services += [gap_data[i:i+16]]
+            elif adv_seg_type == 0x09: # Device name
+                self.name = gap_data[1:].decode('utf8')
 
     def get_services(self):
         self.parse_advertisement_data()
         return self.services
+
+    def get_name(self):
+        self.parse_advertisement_data()
+        return self.name
 
     def get_ad_type_string(self, type_ord):
         return BLE_GAP_AD_TYPE_STRINGS[type_ord]
@@ -252,7 +259,7 @@ class ProcedureManager(object):
                 yield handle # allow the caller to execute his API call in this context.
                 # the Result pair can be used by the context for
                 self.ioTimestamps[procedure_type].append(time.time())
-                
+
 
                 if not handle.event.wait(timeout):
                     raise Timeout("Procedure call timed out")
