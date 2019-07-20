@@ -554,8 +554,8 @@ class BlueGigaModule(BlueGigaCallbacks, ProcedureManager):
     def disallow_bonding(self):
         self._api.ble_cmd_sm_set_bondable_mode(0)
 
-    def delete_bonding(self):
-        self._api.ble_cmd_sm_delete_bonding(0)
+    def delete_bonding(self, handle=0):
+        self._api.ble_cmd_sm_delete_bonding(handle)
 
     def set_device_capabilities(self, mitm=True, keysize=16, io=sm_io_capability['sm_io_capability_noinputnooutput']):
         self._api.ble_cmd_sm_set_parameters(mitm=1 if mitm else 0, min_key_size=keysize, io_capabilities=io)
