@@ -703,6 +703,19 @@ class BlueGigaServer(BlueGigaModule):
         super(BlueGigaServer, self).__init__(port, baud, timeout)
         self.handle_types = {}
         self.handle_values = {}
+        
+    def scan_all(self, timeout=20):
+        return self._scan(mode=gap_discover_mode['gap_discover_observation'], timeout=timeout)
+    
+    def _scan(self, mode, timeout):
+        self.scan_responses = None
+        now = start = time.time()
+        self._api.ble_cmd_gap_discover(mode=mode)
+        while now < start + timeout:
+            time.sleep(timeout - (now - start))
+            now = time.time()
+        self._api.ble_cmd_gap_end_procedure()
+        return self.scan_responses
 
     def start_advertisement(self, adv_mode, conn_mode, interval_min=1000, interval_max=1500, channels=0x07):
         self._api.ble_cmd_gap_set_adv_parameters(interval_min, interval_max, channels)
