@@ -563,6 +563,20 @@ class BlueGigaModule(BlueGigaCallbacks, ProcedureManager):
     def set_out_of_band_data(self, oob):
         self._api.ble_cmd_sm_set_oob_data(oob.decode("hex"))
 
+            
+    def scan_all(self, timeout=20):
+        return self._scan(mode=gap_discover_mode['gap_discover_observation'], timeout=timeout)
+    
+    def _scan(self, mode, timeout):
+        self.scan_responses = None
+        now = start = time.time()
+        self._api.ble_cmd_gap_discover(mode=mode)
+        while now < start + timeout:
+            time.sleep(timeout - (now - start))
+            now = time.time()
+        self._api.ble_cmd_gap_end_procedure()
+        return self.scan_responses
+
 #------------- Response and Event Callbacks  -------------#
 
     def ble_rsp_system_address_get(self, address):
@@ -629,9 +643,6 @@ class BlueGigaClient(BlueGigaModule):
     def scan_general(self, timeout=20):
         return self._scan(mode=gap_discover_mode['gap_discover_generic'], timeout=timeout)
 
-    def scan_all(self, timeout=20):
-        return self._scan(mode=gap_discover_mode['gap_discover_observation'], timeout=timeout)
-
     def active_scan(self, scan_interval = 0x4B, scan_window = 0x32):
         return self._api.ble_cmd_gap_set_scan_parameters(scan_interval, scan_window, 1)
 
@@ -649,16 +660,6 @@ class BlueGigaClient(BlueGigaModule):
                 latency=latency
             )
         return self.most_recent_connection
-
-    def _scan(self, mode, timeout):
-        self.scan_responses = None
-        now = start = time.time()
-        self._api.ble_cmd_gap_discover(mode=mode)
-        while now < start + timeout:
-            time.sleep(timeout - (now - start))
-            now = time.time()
-        self._api.ble_cmd_gap_end_procedure()
-        return self.scan_responses
 
     def ble_rsp_attclient_write_command(self, connection, result):
         super(BlueGigaClient, self).ble_rsp_attclient_write_command(connection=connection, result=result)
@@ -703,19 +704,6 @@ class BlueGigaServer(BlueGigaModule):
         super(BlueGigaServer, self).__init__(port, baud, timeout)
         self.handle_types = {}
         self.handle_values = {}
-        
-    def scan_all(self, timeout=20):
-        return self._scan(mode=gap_discover_mode['gap_discover_observation'], timeout=timeout)
-    
-    def _scan(self, mode, timeout):
-        self.scan_responses = None
-        now = start = time.time()
-        self._api.ble_cmd_gap_discover(mode=mode)
-        while now < start + timeout:
-            time.sleep(timeout - (now - start))
-            now = time.time()
-        self._api.ble_cmd_gap_end_procedure()
-        return self.scan_responses
 
     def start_advertisement(self, adv_mode, conn_mode, interval_min=1000, interval_max=1500, channels=0x07):
         self._api.ble_cmd_gap_set_adv_parameters(interval_min, interval_max, channels)
