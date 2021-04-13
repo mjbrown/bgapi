@@ -462,10 +462,10 @@ class BLEConnection(ProcedureManager):
 
     @connected
     def reliable_write_by_handle(self, handle, value, offset=0, timeout=3):
-        for i in range((len(value) / 20)+1):
-            chunk = value[20*i+offset:min(20*(i+1)+offset, len(value))]
+        for i in range((len(value) // 18)+1):
+            chunk = value[18*i+offset:min(18*(i+1)+offset, len(value))]
             with self.procedure_call(PROCEDURE, timeout):
-                self._api.ble_cmd_attclient_prepare_write(self.handle, handle, 20*i+offset, chunk)
+                self._api.ble_cmd_attclient_prepare_write(self.handle, handle, 18*i+offset, chunk)
 
         with self.procedure_call(PROCEDURE, timeout):
             self._api.ble_cmd_attclient_execute_write(self.handle, 1) # 1 = commit, 0 = cancel
