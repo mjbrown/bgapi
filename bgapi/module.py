@@ -628,6 +628,12 @@ class BlueGigaModule(BlueGigaCallbacks, ProcedureManager):
             self.connections[connection_handle].set_disconnected(result)
             self.procedure_complete(CONNECT, result=result)
 
+    def ble_evt_gap_scan_response(self, rssi, packet_type, sender, address_type, bond, data):
+        super(BlueGigaModule, self).ble_evt_gap_scan_response(rssi, packet_type, sender, address_type, bond, data)
+        if not self.scan_responses:
+            self.scan_responses = []
+        self.scan_responses += [ BLEScanResponse(rssi, packet_type, sender, address_type, bond, data)]
+
 class BlueGigaClient(BlueGigaModule):
     def connect_by_adv_data(self, adv_data, scan_timeout=3, conn_interval_min=0x20, conn_interval_max=0x30, connection_timeout=100, latency=0):
         responses = self.scan_all(timeout=scan_timeout)
